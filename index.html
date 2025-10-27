@@ -1,0 +1,1877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle AI - Advanced Trading Bot</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="application/javascript"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0c0c1d, #1a1a2e);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header Styles */
+        header {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 15px 0;
+            border-bottom: 1px solid #2a2a4a;
+            margin-bottom: 20px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo h1 {
+            font-size: clamp(20px, 4vw, 28px);
+            background: linear-gradient(90deg, #00d4aa, #0099ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .logo-icon {
+            font-size: clamp(24px, 5vw, 32px);
+            color: #00d4aa;
+        }
+
+        .wallet-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .wallet-status {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(26, 26, 46, 0.8);
+            padding: 10px 15px;
+            border-radius: 12px;
+            border: 1px solid #2a2a4a;
+        }
+
+        .wallet-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .wallet-address {
+            background: #0f0f23;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 12px;
+            border: 1px solid #2a2a4a;
+        }
+
+        .wallet-balance {
+            font-size: 16px;
+            font-weight: bold;
+            color: #00d4aa;
+        }
+
+        .connected-badge {
+            background: #00d4aa;
+            color: #0c0c1d;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+        }
+
+        .connect-wallet-btn {
+            background: linear-gradient(135deg, #00d4aa, #0099ff);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            width: 100%;
+        }
+
+        .connect-wallet-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
+        }
+
+        /* Dashboard Styles */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-card {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-3px);
+            border-color: #00d4aa;
+        }
+
+        .dashboard-label {
+            color: #8888aa;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .dashboard-value {
+            font-size: clamp(18px, 4vw, 24px);
+            font-weight: bold;
+        }
+
+        .positive {
+            color: #00d4aa;
+        }
+
+        .negative {
+            color: #ff4444;
+        }
+
+        .neutral {
+            color: #ffaa00;
+        }
+
+        /* Buckets Panel */
+        .buckets-panel {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 0;
+            margin: 15px 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .buckets-panel.active {
+            max-height: 600px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .buckets-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .buckets-title {
+            color: #00d4aa;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .close-buckets {
+            background: none;
+            border: none;
+            color: #8888aa;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        .buckets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .bucket-card {
+            background: #0f0f23;
+            border: 1px solid #2a2a4a;
+            border-radius: 10px;
+            padding: 15px;
+            transition: all 0.3s;
+        }
+
+        .bucket-card:hover {
+            border-color: #00d4aa;
+            transform: translateY(-2px);
+        }
+
+        .bucket-name {
+            color: #00d4aa;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .bucket-range {
+            color: #8888aa;
+            font-size: 11px;
+            margin-bottom: 12px;
+        }
+
+        .bucket-performance {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bucket-label {
+            color: #ccccdd;
+            font-size: 12px;
+        }
+
+        .bucket-value {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .bucket-status {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+            font-weight: bold;
+            margin-left: 6px;
+        }
+
+        .status-active {
+            background: rgba(0, 212, 170, 0.2);
+            color: #00d4aa;
+        }
+
+        .status-inactive {
+            background: rgba(136, 136, 170, 0.2);
+            color: #8888aa;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+            
+            header {
+                flex-direction: row;
+                align-items: center;
+            }
+            
+            .wallet-section {
+                width: auto;
+                flex-direction: row;
+                align-items: center;
+                gap: 15px;
+            }
+            
+            .connect-wallet-btn {
+                width: auto;
+            }
+        }
+
+        .panel {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 8px;
+        }
+
+        .panel-header h2 {
+            font-size: clamp(18px, 3vw, 22px);
+            color: #00d4aa;
+        }
+
+        .live-badge {
+            background: #ff4444;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 9px;
+            animation: pulse 2s infinite;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        .input-label {
+            display: block;
+            margin-bottom: 6px;
+            color: #ccccdd;
+            font-size: 13px;
+        }
+
+        .oracle-input {
+            background: #0f0f23;
+            border: 1px solid #2a2a4a;
+            border-radius: 10px;
+            padding: 12px 14px;
+            color: white;
+            font-size: 14px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+
+        .oracle-input:focus {
+            outline: none;
+            border-color: #00d4aa;
+            box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.2);
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #0f0f23;
+            border: 1px solid #2a2a4a;
+            border-radius: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+
+        .search-result {
+            padding: 10px 12px;
+            border-bottom: 1px solid #2a2a4a;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result:hover {
+            background: #1a1a2e;
+        }
+
+        .search-result:last-child {
+            border-bottom: none;
+        }
+
+        .token-name {
+            color: #00d4aa;
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .token-info {
+            color: #8888aa;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .token-price {
+            color: #ffffff;
+        }
+
+        .token-change-positive {
+            color: #00d4aa;
+        }
+
+        .token-change-negative {
+            color: #ff4444;
+        }
+
+        .token-change-neutral {
+            color: #ffaa00;
+        }
+
+        .chain-badge {
+            background: #2a2a4a;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+            margin-left: 6px;
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 10px;
+            padding: 12px 16px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00d4aa, #0099ff);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b, #ff4444);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 68, 68, 0.4);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: #0f0f23;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #8888aa;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: clamp(18px, 3vw, 24px);
+            font-weight: bold;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 250px;
+            background: #0f0f23;
+            border-radius: 12px;
+            margin: 15px 0;
+            padding: 12px;
+            border: 1px solid #2a2a4a;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        .log-container {
+            height: 180px;
+            overflow-y: auto;
+            background: #0f0f23;
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 12px;
+            border: 1px solid #2a2a4a;
+            margin-top: 15px;
+        }
+
+        .log-entry {
+            margin-bottom: 6px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #2a2a4a;
+        }
+
+        .log-time {
+            color: #8888aa;
+            font-size: 10px;
+        }
+
+        .token-suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .token-suggestion {
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid #00d4aa;
+            border-radius: 20px;
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .token-suggestion:hover {
+            background: rgba(0, 212, 170, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .analysis-result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #0f0f23;
+            border-radius: 12px;
+            border: 1px solid #2a2a4a;
+        }
+
+        .risk-indicator {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .risk-low {
+            background: rgba(0, 212, 170, 0.2);
+            color: #00d4aa;
+        }
+
+        .risk-medium {
+            background: rgba(255, 170, 0, 0.2);
+            color: #ffaa00;
+        }
+
+        .risk-high {
+            background: rgba(255, 68, 68, 0.2);
+            color: #ff4444;
+        }
+
+        .position-info {
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid #00d4aa;
+            border-radius: 12px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .metric-item {
+            text-align: center;
+        }
+
+        .metric-value {
+            color: #ffffff;
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 2px;
+        }
+
+        .metric-label {
+            color: #8888aa;
+            font-size: 9px;
+        }
+
+        .ai-recommendation {
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid #00d4aa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+        }
+
+        .recommendation-title {
+            color: #00d4aa;
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 11px;
+        }
+
+        .recommendation-text {
+            color: #ccccdd;
+            font-size: 10px;
+            line-height: 1.4;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        .auto-mode {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 15px 0;
+            padding: 12px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            border: 1px solid #2a2a4a;
+        }
+
+        @media (min-width: 480px) {
+            .auto-mode {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toggle-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #00d4aa;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 28px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #2a2a4a;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background: linear-gradient(135deg, #00d4aa, #0099ff);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        .subscription-plans {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        @media (min-width: 768px) {
+            .subscription-plans {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+        }
+
+        .plan-card {
+            background: #0f0f23;
+            border: 1px solid #2a2a4a;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .plan-card:hover {
+            border-color: #00d4aa;
+            transform: translateY(-3px);
+        }
+
+        .plan-name {
+            color: #00d4aa;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .plan-price {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 15px;
+        }
+
+        .plan-features li {
+            padding: 6px 0;
+            border-bottom: 1px solid #2a2a4a;
+            color: #ccccdd;
+            font-size: 12px;
+        }
+
+        .plan-features li:last-child {
+            border-bottom: none;
+        }
+
+        .report-frequency {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        @media (min-width: 480px) {
+            .report-frequency {
+                flex-direction: row;
+            }
+        }
+
+        .frequency-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            background: #0f0f23;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+        }
+
+        .frequency-option.active {
+            background: rgba(0, 212, 170, 0.1);
+            border-color: #00d4aa;
+        }
+
+        .bucket-strategy {
+            background: rgba(0, 212, 170, 0.05);
+            border: 1px solid #2a2a4a;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 8px 0;
+        }
+
+        .strategy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .strategy-name {
+            color: #00d4aa;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
+        .strategy-details {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 6px;
+            font-size: 11px;
+        }
+
+        @media (min-width: 480px) {
+            .strategy-details {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .strategy-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #2a2a4a;
+            color: #8888aa;
+            font-size: 12px;
+        }
+
+        /* Mobile Menu */
+        .mobile-menu {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .mobile-nav-btn {
+            background: #1a1a2e;
+            border: 1px solid #2a2a4a;
+            border-radius: 8px;
+            padding: 10px;
+            color: #00d4aa;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            margin: 0 5px;
+            text-align: center;
+            font-size: 12px;
+        }
+
+        .mobile-nav-btn.active {
+            background: rgba(0, 212, 170, 0.1);
+            border-color: #00d4aa;
+        }
+
+        @media (min-width: 1024px) {
+            .mobile-menu {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <div class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h1>Oracle AI</h1>
+                </div>
+            </div>
+            <div class="wallet-section">
+                <div class="wallet-status">
+                    <div class="wallet-info">
+                        <div class="wallet-address" id="walletAddress">Not Connected</div>
+                        <div class="wallet-balance" id="walletBalance">$0.00</div>
+                        <div class="connected-badge" id="connectionStatus">DISCONNECTED</div>
+                    </div>
+                </div>
+                <button class="connect-wallet-btn" id="connectWalletBtn">
+                    <i class="fas fa-wallet"></i> Connect Wallet
+                </button>
+            </div>
+        </header>
+
+        <!-- Mobile Navigation -->
+        <div class="mobile-menu">
+            <button class="mobile-nav-btn active" data-panel="trading">Trading</button>
+            <button class="mobile-nav-btn" data-panel="analysis">Analysis</button>
+            <button class="mobile-nav-btn" data-panel="reports">Reports</button>
+        </div>
+
+        <!-- Dashboard Cards -->
+        <div class="dashboard">
+            <div class="dashboard-card">
+                <div class="dashboard-label">Active Buckets</div>
+                <div class="dashboard-value" id="activeBuckets">6</div>
+            </div>
+            <div class="dashboard-card" id="activePositionsCard">
+                <div class="dashboard-label">Active Positions</div>
+                <div class="dashboard-value" id="activePositions">68</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="dashboard-label">Current P&L</div>
+                <div class="dashboard-value positive" id="currentPnl">+8.8%</div>
+            </div>
+            <div class="dashboard-card">
+                <div class="dashboard-label">Social Signals</div>
+                <div class="dashboard-value" id="socialSignals">24</div>
+            </div>
+        </div>
+
+        <!-- Buckets Panel (Dropdown) -->
+        <div class="buckets-panel" id="bucketsPanel">
+            <div class="buckets-header">
+                <h3 class="buckets-title">Performance Buckets</h3>
+                <button class="close-buckets" id="closeBuckets">&times;</button>
+            </div>
+            <div class="buckets-grid" id="bucketsGrid">
+                <!-- Buckets will be dynamically inserted here -->
+            </div>
+        </div>
+
+        <div class="auto-mode">
+            <div class="toggle-container">
+                <span class="toggle-label">Auto Trading Mode</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="autoModeToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div id="autoModeStatus">Inactive</div>
+        </div>
+
+        <div class="main-content">
+            <!-- Token Analysis Panel -->
+            <div class="panel" id="analysisPanel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-chart-line"></i> Token Analysis</h2>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Token Name or Contract Address</label>
+                    <input type="text" class="oracle-input" id="tokenInput" placeholder="Enter token name or contract address" value="AVNT">
+                    <div class="search-results" id="searchResults"></div>
+                </div>
+                
+                <button class="btn btn-primary" id="analyzeBtn" style="width: 100%;">
+                    <i class="fas fa-search"></i> Analyze Token
+                </button>
+                
+                <div class="token-suggestions">
+                    <div class="token-suggestion" onclick="loadToken('AVNT')">AVNT</div>
+                    <div class="token-suggestion" onclick="loadToken('ETH')">ETH</div>
+                    <div class="token-suggestion" onclick="loadToken('SOL')">SOL</div>
+                    <div class="token-suggestion" onclick="loadToken('BTC')">BTC</div>
+                    <div class="token-suggestion" onclick="loadToken('ARB')">ARB</div>
+                </div>
+                
+                <div class="analysis-result" id="analysisResult">
+                    <p>Analyze a token to see detailed information and trading recommendations.</p>
+                </div>
+
+                <!-- Social Sentiment Analysis -->
+                <div class="analysis-result">
+                    <h3 style="margin-bottom: 10px; color: #00d4aa;">Social Sentiment Analysis</h3>
+                    <div class="metric-grid">
+                        <div class="metric-item">
+                            <div class="metric-value positive">85%</div>
+                            <div class="metric-label">Positive</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value">12%</div>
+                            <div class="metric-label">Neutral</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value negative">3%</div>
+                            <div class="metric-label">Negative</div>
+                        </div>
+                    </div>
+                    <div class="ai-recommendation">
+                        <div class="recommendation-title">SOCIAL BUZZ DETECTED</div>
+                        <div class="recommendation-text">
+                            High engagement detected across Twitter, Telegram, and Discord. 
+                            Mentions increased by 240% in last 24 hours. Strong community growth.
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Live Trading Panel -->
+            <div class="panel" id="tradingPanel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-coins"></i> Live Trading</h2>
+                    <span class="live-badge">LIVE</span>
+                </div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">EQUITY</div>
+                        <div class="stat-value positive" id="equityValue">$2,650.38</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">REALIZED P&L</div>
+                        <div class="stat-value positive" id="realizedPnlValue">$145.52</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">UNREALIZED P&L</div>
+                        <div class="stat-value positive" id="unrealizedPnlValue">$35.62</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Trade Amount (USD)</label>
+                    <input type="number" class="oracle-input" id="tradeAmount" value="100" min="10" step="10">
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="buyBtn">
+                        <i class="fas fa-arrow-up"></i> BUY
+                    </button>
+                    <button class="btn btn-danger" id="sellBtn">
+                        <i class="fas fa-arrow-down"></i> SELL
+                    </button>
+                </div>
+                
+                <div class="chart-container">
+                    <canvas id="priceChart"></canvas>
+                </div>
+                
+                <div class="position-info" id="positionInfo">
+                    <h3><i class="fas fa-chart-bar"></i> Current Position</h3>
+                    <p>No active position. Analyze a token and execute a trade to see position details.</p>
+                </div>
+                
+                <div class="log-container" id="tradingLog">
+                    <div class="log-entry">
+                        <span class="log-time">[12:45:23]</span> Wallet connected successfully
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">[12:46:10]</span> Trading interface initialized
+                    </div>
+                    <div class="log-entry">
+                        <span class="log-time">[12:47:35]</span> AVNT trade completed: +48.48%
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reports & Subscriptions Panel -->
+            <div class="panel" id="reportsPanel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-file-export"></i> Reports & Subscriptions</h2>
+                </div>
+                
+                <div class="input-group">
+                    <label class="input-label">Your Email for Reports</label>
+                    <input type="email" class="oracle-input" id="emailInput" placeholder="your-email@gmail.com" value="lekangarena@gmail.com">
+                </div>
+                
+                <div class="report-frequency">
+                    <div class="frequency-option active" data-frequency="12">Every 12 Hours</div>
+                    <div class="frequency-option" data-frequency="24">Every 24 Hours</div>
+                    <div class="frequency-option" data-frequency="manual">Manual Only</div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="exportBtn">
+                        <i class="fas fa-file-export"></i> Create Report & Email
+                    </button>
+                    <button class="btn btn-primary" id="scheduleExportBtn">
+                        <i class="fas fa-clock"></i> Schedule Reports
+                    </button>
+                </div>
+                
+                <div class="analysis-result" id="exportStatus">
+                    <p>Enter your email and select frequency to get automated reports.</p>
+                </div>
+
+                <!-- Subscription Plans -->
+                <h3 style="margin: 20px 0 15px 0; color: #00d4aa;">Subscription Plans</h3>
+                <div class="subscription-plans">
+                    <div class="plan-card">
+                        <div class="plan-name">BASIC</div>
+                        <div class="plan-price">$300</div>
+                        <ul class="plan-features">
+                            <li>One Chain (EVM)</li>
+                            <li>Basic Trading Signals</li>
+                            <li>Daily Reports</li>
+                            <li>Community Access</li>
+                        </ul>
+                        <button class="btn btn-primary" style="width: 100%;">Subscribe</button>
+                    </div>
+                    <div class="plan-card">
+                        <div class="plan-name">PRO</div>
+                        <div class="plan-price">$500</div>
+                        <ul class="plan-features">
+                            <li>Two Chains (EVM + SOL)</li>
+                            <li>Advanced Signals</li>
+                            <li>Real-time Alerts</li>
+                            <li>Priority Support</li>
+                        </ul>
+                        <button class="btn btn-primary" style="width: 100%;">Subscribe</button>
+                    </div>
+                    <div class="plan-card">
+                        <div class="plan-name">ELITE</div>
+                        <div class="plan-price">$1,000</div>
+                        <ul class="plan-features">
+                            <li>All Chain Access</li>
+                            <li>Premium Signals</li>
+                            <li>24/7 Support</li>
+                            <li>VIP Community</li>
+                        </ul>
+                        <button class="btn btn-primary" style="width: 100%;">Subscribe</button>
+                    </div>
+                </div>
+
+                <!-- Bucket Strategies -->
+                <h3 style="margin: 20px 0 15px 0; color: #00d4aa;">Trading Strategies</h3>
+                <div class="bucket-strategy">
+                    <div class="strategy-header">
+                        <div class="strategy-name">Strategy A - Conservative</div>
+                        <span class="risk-indicator risk-low">LOW RISK</span>
+                    </div>
+                    <div class="strategy-details">
+                        <div class="strategy-item">
+                            <span>Take Profit:</span>
+                            <span>2%, 4%, 6%, 8%, 10%</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span>Stop Loss:</span>
+                            <span>1%, 2%, 3%, 4%, 5%</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span>Liquidity:</span>
+                            <span>20% each level</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span>Market Cap:</span>
+                            <span>Large Cap (1B+)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bucket-strategy">
+                    <div class="strategy-header">
+                        <div class="strategy-name">Strategy B - Balanced</div>
+                        <span class="risk-indicator risk-medium">MEDIUM RISK</span>
+                    </div>
+                    <div class="strategy-details">
+                        <div class="strategy-item">
+                            <span>Take Profit:</span>
+                            <span>3%, 6%, 9%, 12%, 15%</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span>Stop Loss:</span>
+                            <span>2%, 4%, 6%, 8%, 10%</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span>Liquidity:</span>
+                            <span>10%, 15%, 20%, 25%, 30%</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span>Market Cap:</span>
+                            <span>Mid Cap (100M-1B)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bucket-strategy">
+                    <div class="strategy-header">
+                        <div class="strategy-name">Strategy C - Aggressive</div>
+                        <span class="risk-indicator risk-high">HIGH RISK</span>
+                    </div>
+                    <div class="strategy-details">
+                        <div class="strategy-item">
+                            <span>Take Profit:</span>
+                            <span>5%, 10%, 15%, 20%, 25%</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span>Stop Loss:</span>
+                            <span>3%, 5%, 7%, 9%, 12%</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span>Liquidity:</span>
+                            <span>4%, 8%, 16%, 32%, 40%</span>
+                        </div>
+                        <div class="strategy-item">
+                            <span>Market Cap:</span>
+                            <span>Small Cap</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>Oracle AI Trading Platform • Advanced Algorithmic Trading • Use at your own risk</p>
+            <p style="margin-top: 8px; font-size: 10px;">
+                Referral Rewards: Tier One 15% | Tier Two 7% | Hard Cost Bucket 18%
+            </p>
+        </footer>
+    </div>
+
+    <script>
+        // =============================================
+        // CONFIGURATION
+        // =============================================
+
+        // Wallet Configuration
+        const WALLET_ADDRESS = "0x742d35Cc6634C893292C6E4Ee57D5a2e4E57D5a2";
+
+        // Trading Configuration
+        const TRADING_CONFIG = {
+            initialEquity: 2435.00,
+            equity: 2650.38,
+            realizedPnl: 145.52,
+            unrealizedPnl: 35.62,
+            activePositions: 68,
+            recentTrade: {
+                token: "AVNT",
+                pnl: 48.48
+            }
+        };
+
+        // Performance Buckets Configuration
+        const PERFORMANCE_BUCKETS = [
+            { name: "Mid Cap Growth", range: "25M-50M MC", performance: 3.2, description: "High-growth mid caps", active: true },
+            { name: "Small Cap Growth", range: "2M-5M MC", performance: 2.8, description: "Explosive growth small caps", active: true },
+            { name: "Small Cap Gems", range: "5M-10M MC", performance: 1.8, description: "Hidden gems in small cap space", active: true },
+            { name: "Mid Cap Stars", range: "50M-100M MC", performance: 0.9, description: "Promising mid cap performers", active: true },
+            { name: "Large Cap Growth", range: "250M-500M MC", performance: 0.4, description: "High-growth large caps", active: true },
+            { name: "Mega Cap Growth", range: "5B-10B MC", performance: 0.3, description: "Large caps with growth potential", active: true },
+        ];
+
+        // Trading Strategies from your spreadsheet
+        const TRADING_STRATEGIES = {
+            A: {
+                name: "Conservative",
+                tp: [2, 4, 6, 8, 10],
+                sl: [1, 2, 3, 4, 5],
+                liquidity: [20, 20, 20, 20, 20],
+                marketCap: "Large Cap (1B+)",
+                risk: "low"
+            },
+            B: {
+                name: "Balanced", 
+                tp: [3, 6, 9, 12, 15],
+                sl: [2, 4, 6, 8, 10],
+                liquidity: [10, 15, 20, 25, 30],
+                marketCap: "Mid Cap (100M-1B)",
+                risk: "medium"
+            },
+            C: {
+                name: "Aggressive",
+                tp: [5, 10, 15, 20, 25],
+                sl: [3, 5, 7, 9, 12],
+                liquidity: [4, 8, 16, 32, 40],
+                marketCap: "Small Cap",
+                risk: "high"
+            }
+        };
+
+        // =============================================
+        // TRADING STATE
+        // =============================================
+        
+        const tradingState = {
+            equity: TRADING_CONFIG.equity,
+            realizedPnl: TRADING_CONFIG.realizedPnl,
+            unrealizedPnl: TRADING_CONFIG.unrealizedPnl,
+            activePositions: TRADING_CONFIG.activePositions,
+            positionSize: 0,
+            currentToken: "AVNT",
+            currentPrice: 0,
+            currentPair: null,
+            trades: [],
+            performanceBuckets: PERFORMANCE_BUCKETS,
+            walletConnected: false,
+            currentStrategy: "B",
+            reportFrequency: "12"
+        };
+        
+        // Price history for chart
+        const priceHistory = Array.from({length: 20}, (_, i) => {
+            const basePrice = 1.50;
+            const volatility = 0.3;
+            return basePrice + Math.sin(i * 0.5) * volatility + Math.random() * 0.2;
+        });
+        
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            // Set up mobile navigation
+            setupMobileNavigation();
+            
+            // Initialize dashboard
+            updateDashboard();
+            
+            // Initialize trading UI
+            updateTradingUI();
+            
+            // Initialize chart
+            initializeChart();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Add initial log entries
+            logTrade("Oracle AI initialized with advanced trading strategies");
+            logTrade(`Active strategy: ${TRADING_STRATEGIES[tradingState.currentStrategy].name}`);
+            logTrade(`Report frequency: Every ${tradingState.reportFrequency} hours`);
+            
+            // Load initial token data
+            analyzeToken();
+            
+            // Start live price updates
+            setInterval(updateLivePrice, 5000);
+        }
+
+        function setupMobileNavigation() {
+            const navButtons = document.querySelectorAll('.mobile-nav-btn');
+            const panels = document.querySelectorAll('.panel');
+            
+            navButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const targetPanel = this.getAttribute('data-panel');
+                    
+                    // Update active button
+                    navButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Show/hide panels based on screen size
+                    if (window.innerWidth < 1024) {
+                        panels.forEach(panel => {
+                            if (panel.id.includes(targetPanel)) {
+                                panel.style.display = 'block';
+                            } else {
+                                panel.style.display = 'none';
+                            }
+                        });
+                    }
+                });
+            });
+        }
+
+        function setupEventListeners() {
+            document.getElementById('analyzeBtn').addEventListener('click', analyzeToken);
+            document.getElementById('buyBtn').addEventListener('click', () => executeTrade('buy'));
+            document.getElementById('sellBtn').addEventListener('click', () => executeTrade('sell'));
+            document.getElementById('autoModeToggle').addEventListener('change', toggleAutoMode);
+            document.getElementById('tokenInput').addEventListener('input', handleSearchInput);
+            document.getElementById('activePositionsCard').addEventListener('click', toggleBucketsPanel);
+            document.getElementById('closeBuckets').addEventListener('click', toggleBucketsPanel);
+            document.getElementById('connectWalletBtn').addEventListener('click', connectWallet);
+            document.getElementById('exportBtn').addEventListener('click', exportToGoogleDocsAndEmail);
+            document.getElementById('scheduleExportBtn').addEventListener('click', setupScheduledExport);
+            
+            // Report frequency selection
+            document.querySelectorAll('.frequency-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.frequency-option').forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    tradingState.reportFrequency = this.getAttribute('data-frequency');
+                    logTrade(`Report frequency set to: ${tradingState.reportFrequency === 'manual' ? 'Manual' : 'Every ' + tradingState.reportFrequency + ' hours'}`);
+                });
+            });
+        }
+        
+        function updateDashboard() {
+            // Update wallet balance
+            document.getElementById('walletBalance').textContent = `$${TRADING_CONFIG.equity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            // Update dashboard values
+            document.getElementById('activeBuckets').textContent = PERFORMANCE_BUCKETS.filter(bucket => bucket.active).length;
+            document.getElementById('activePositions').textContent = TRADING_CONFIG.activePositions;
+            document.getElementById('currentPnl').textContent = `+8.8%`;
+            
+            // Update buckets grid
+            const bucketsGrid = document.getElementById('bucketsGrid');
+            bucketsGrid.innerHTML = tradingState.performanceBuckets.map(bucket => {
+                let colorClass = 'positive';
+                if (bucket.performance < 0) {
+                    colorClass = 'negative';
+                } else if (bucket.performance === 0) {
+                    colorClass = 'neutral';
+                }
+                
+                const statusClass = bucket.active ? 'status-active' : 'status-inactive';
+                const statusText = bucket.active ? 'ACTIVE' : 'NOT IMPLEMENTED';
+                
+                return `
+                <div class="bucket-card" style="opacity: ${bucket.active ? '1' : '0.6'};">
+                    <div class="bucket-name">
+                        ${bucket.name}
+                        <span class="bucket-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="bucket-range">${bucket.range}</div>
+                    <div class="bucket-performance">
+                        <span class="bucket-label">Performance:</span>
+                        <span class="bucket-value ${colorClass}">
+                            ${bucket.performance > 0 ? '+' : ''}${bucket.performance}%
+                        </span>
+                    </div>
+                    <div style="margin-top: 10px; color: #8888aa; font-size: 12px;">
+                        ${bucket.description}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+        
+        function updateTradingUI() {
+            // Update trading stats
+            document.getElementById('equityValue').textContent = `$${tradingState.equity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('realizedPnlValue').textContent = `$${tradingState.realizedPnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            document.getElementById('unrealizedPnlValue').textContent = `$${tradingState.unrealizedPnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+            
+            // Update active positions
+            document.getElementById('activePositions').textContent = tradingState.activePositions;
+        }
+        
+        function initializeChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: priceHistory.length}, (_, i) => i + 1),
+                    datasets: [{
+                        label: `${tradingState.currentToken} Price`,
+                        data: priceHistory,
+                        borderColor: '#00d4aa',
+                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            backgroundColor: 'rgba(26, 26, 46, 0.9)',
+                            titleColor: '#00d4aa',
+                            bodyColor: '#ffffff',
+                            borderColor: '#2a2a4a',
+                            borderWidth: 1
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                color: 'rgba(42, 42, 74, 0.5)',
+                                borderColor: '#2a2a4a'
+                            },
+                            ticks: {
+                                color: '#8888aa'
+                            }
+                        },
+                        y: {
+                            grid: {
+                                color: 'rgba(42, 42, 74, 0.5)',
+                                borderColor: '#2a2a4a'
+                            },
+                            ticks: {
+                                color: '#8888aa'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Store chart reference for updates
+            tradingState.priceChart = chart;
+        }
+        
+        function analyzeToken() {
+            const tokenInput = document.getElementById('tokenInput').value.trim().toUpperCase();
+            if (!tokenInput) return;
+            
+            tradingState.currentToken = tokenInput;
+            
+            // Simulate API call to analyze token
+            const analysisResult = document.getElementById('analysisResult');
+            analysisResult.innerHTML = `
+                <h3 style="margin-bottom: 15px; color: #00d4aa;">
+                    ${tokenInput} Analysis
+                    <span class="risk-indicator risk-low">LOW RISK</span>
+                </h3>
+                
+                <div class="metric-grid">
+                    <div class="metric-item">
+                        <div class="metric-value">$${(1.50 + Math.random() * 0.5).toFixed(2)}</div>
+                        <div class="metric-label">Current Price</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value positive">+${(Math.random() * 15).toFixed(1)}%</div>
+                        <div class="metric-label">24h Change</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">$${(Math.random() * 100).toFixed(0)}M</div>
+                        <div class="metric-label">Market Cap</div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-value">${(Math.random() * 10).toFixed(1)}</div>
+                        <div class="metric-label">Volatility</div>
+                    </div>
+                </div>
+                
+                <div class="ai-recommendation">
+                    <div class="recommendation-title">AI TRADING RECOMMENDATION</div>
+                    <div class="recommendation-text">
+                        Strong buy signal detected. Technical analysis shows bullish momentum with RSI at 45 (neutral). 
+                        Volume is increasing by 28% and the token is trading above its 50-day moving average. 
+                        Expected short-term gain: 8-12%.
+                    </div>
+                </div>
+                
+                <div style="margin-top: 15px; font-size: 12px; color: #8888aa;">
+                    <p><strong>Analysis Summary:</strong></p>
+                    <ul style="margin-left: 15px; margin-top: 8px;">
+                        <li>Strong fundamentals with growing adoption</li>
+                        <li>Positive sentiment across social metrics</li>
+                        <li>Low correlation with BTC (0.32)</li>
+                        <li>Liquidity score: 8.2/10</li>
+                    </ul>
+                </div>
+            `;
+            
+            logTrade(`Analyzed ${tokenInput}: Strong buy signal detected`);
+            
+            // Update position info
+            updatePositionInfo();
+        }
+        
+        function executeTrade(type) {
+            if (!tradingState.walletConnected) {
+                alert('Please connect your wallet first');
+                return;
+            }
+            
+            const amount = parseFloat(document.getElementById('tradeAmount').value);
+            if (!amount || amount < 10) {
+                alert('Please enter a valid trade amount (minimum $10)');
+                return;
+            }
+            
+            const token = tradingState.currentToken;
+            const price = priceHistory[priceHistory.length - 1];
+            const strategy = TRADING_STRATEGIES[tradingState.currentStrategy];
+            const pnlPercent = (Math.random() * 20 - 5).toFixed(2);
+            const pnlAmount = (amount * pnlPercent / 100).toFixed(2);
+            
+            // Update trading state
+            if (type === 'buy') {
+                tradingState.positionSize += amount / price;
+                tradingState.equity -= amount;
+                tradingState.activePositions++;
+                
+                logTrade(`BUY ${token}: $${amount} @ $${price.toFixed(2)} | Position: ${(amount / price).toFixed(2)} ${token}`);
+                logTrade(`Applied ${strategy.name} strategy: TP ${strategy.tp.join('%/')}% | SL ${strategy.sl.join('%/')}%`);
+            } else {
+                if (tradingState.positionSize <= 0) {
+                    alert('No position to sell');
+                    return;
+                }
+                
+                const sellValue = tradingState.positionSize * price;
+                tradingState.equity += sellValue;
+                tradingState.realizedPnl += parseFloat(pnlAmount);
+                tradingState.positionSize = 0;
+                tradingState.activePositions = Math.max(0, tradingState.activePositions - 1);
+                
+                logTrade(`SELL ${token}: $${sellValue.toFixed(2)} | P&L: $${pnlAmount} (${pnlPercent}%)`);
+            }
+            
+            // Update UI
+            updateTradingUI();
+            updatePositionInfo();
+            
+            // Add to trade history
+            tradingState.trades.push({
+                type,
+                token,
+                amount,
+                price,
+                timestamp: new Date(),
+                strategy: tradingState.currentStrategy
+            });
+        }
+        
+        function updatePositionInfo() {
+            const positionInfo = document.getElementById('positionInfo');
+            const currentPrice = priceHistory[priceHistory.length - 1];
+            const positionValue = tradingState.positionSize * currentPrice;
+            const unrealizedPnl = positionValue - (tradingState.positionSize * (currentPrice * 0.95)); // Simulate entry price
+            
+            if (tradingState.positionSize > 0) {
+                const strategy = TRADING_STRATEGIES[tradingState.currentStrategy];
+                positionInfo.innerHTML = `
+                    <h3><i class="fas fa-chart-bar"></i> ${tradingState.currentToken} Position</h3>
+                    <div class="metric-grid">
+                        <div class="metric-item">
+                            <div class="metric-value">${tradingState.positionSize.toFixed(4)}</div>
+                            <div class="metric-label">Position Size</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value">$${currentPrice.toFixed(2)}</div>
+                            <div class="metric-label">Current Price</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value">$${positionValue.toFixed(2)}</div>
+                            <div class="metric-label">Position Value</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value positive">+$${unrealizedPnl.toFixed(2)}</div>
+                            <div class="metric-label">Unrealized P&L</div>
+                        </div>
+                    </div>
+                    <div class="ai-recommendation">
+                        <div class="recommendation-title">ACTIVE STRATEGY: ${strategy.name.toUpperCase()}</div>
+                        <div class="recommendation-text">
+                            Take Profit Levels: ${strategy.tp.map(tp => `${tp}%`).join(', ')} | 
+                            Stop Loss Levels: ${strategy.sl.map(sl => `${sl}%`).join(', ')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                positionInfo.innerHTML = `
+                    <h3><i class="fas fa-chart-bar"></i> Current Position</h3>
+                    <p>No active position. Analyze a token and execute a trade to see position details.</p>
+                `;
+            }
+        }
+        
+        function toggleAutoMode() {
+            const toggle = document.getElementById('autoModeToggle');
+            const status = document.getElementById('autoModeStatus');
+            
+            if (toggle.checked) {
+                status.textContent = 'ACTIVE';
+                status.style.color = '#00d4aa';
+                logTrade('Auto trading mode activated');
+                
+                // Simulate auto trading
+                setTimeout(() => {
+                    if (toggle.checked) {
+                        const randomAction = Math.random() > 0.5 ? 'BUY' : 'SELL';
+                        const tokens = ['AVNT', 'ETH', 'SOL', 'BTC', 'ARB'];
+                        const randomToken = tokens[Math.floor(Math.random() * tokens.length)];
+                        
+                        loadToken(randomToken);
+                        setTimeout(() => {
+                            executeTrade(randomAction.toLowerCase());
+                        }, 1000);
+                    }
+                }, 5000);
+            } else {
+                status.textContent = 'Inactive';
+                status.style.color = '#8888aa';
+                logTrade('Auto trading mode deactivated');
+            }
+        }
+        
+        function handleSearchInput() {
+            const query = document.getElementById('tokenInput').value.toLowerCase();
+            const results = document.getElementById('searchResults');
+            
+            if (query.length < 2) {
+                results.style.display = 'none';
+                return;
+            }
+            
+            // Simulate search results
+            const tokens = [
+                { name: 'AVNT', fullName: 'Aventus', price: 1.52, change: 2.4, chain: 'ETH' },
+                { name: 'ETH', fullName: 'Ethereum', price: 3450.67, change: -1.2, chain: 'ETH' },
+                { name: 'SOL', fullName: 'Solana', price: 102.45, change: 5.7, chain: 'SOL' },
+                { name: 'BTC', fullName: 'Bitcoin', price: 61234.89, change: 0.8, chain: 'BTC' },
+                { name: 'ARB', fullName: 'Arbitrum', price: 1.23, change: 3.1, chain: 'ETH' }
+            ];
+            
+            const filtered = tokens.filter(token => 
+                token.name.toLowerCase().includes(query) || 
+                token.fullName.toLowerCase().includes(query)
+            );
+            
+            if (filtered.length > 0) {
+                results.innerHTML = filtered.map(token => `
+                    <div class="search-result" onclick="loadToken('${token.name}')">
+                        <div class="token-name">
+                            ${token.name} (${token.fullName})
+                            <span class="chain-badge">${token.chain}</span>
+                        </div>
+                        <div class="token-info">
+                            <span class="token-price">$${token.price.toLocaleString()}</span>
+                            <span class="token-change-${token.change >= 0 ? 'positive' : 'negative'}">
+                                ${token.change >= 0 ? '+' : ''}${token.change}%
+                            </span>
+                        </div>
+                    </div>
+                `).join('');
+                results.style.display = 'block';
+            } else {
+                results.style.display = 'none';
+            }
+        }
+        
+        function loadToken(token) {
+            document.getElementById('tokenInput').value = token;
+            document.getElementById('searchResults').style.display = 'none';
+            analyzeToken();
+        }
+        
+        function toggleBucketsPanel() {
+            const panel = document.getElementById('bucketsPanel');
+            panel.classList.toggle('active');
+        }
+        
+        function connectWallet() {
+            // Simulate wallet connection
+            tradingState.walletConnected = true;
+            document.getElementById('walletAddress').textContent = `${WALLET_ADDRESS.substring(0, 6)}...${WALLET_ADDRESS.substring(WALLET_ADDRESS.length - 4)}`;
+            document.getElementById('connectionStatus').textContent = 'CONNECTED';
+            document.getElementById('connectWalletBtn').textContent = 'Connected';
+            document.getElementById('connectWalletBtn').style.background = 'linear-gradient(135deg, #00aa88, #0077cc)';
+            
+            logTrade('Wallet connected successfully');
+            logTrade(`Address: ${WALLET_ADDRESS}`);
+        }
+        
+        function updateLivePrice() {
+            // Simulate live price updates
+            const lastPrice = priceHistory[priceHistory.length - 1];
+            const newPrice = lastPrice + (Math.random() - 0.5) * 0.1;
+            priceHistory.push(newPrice);
+            priceHistory.shift(); // Keep fixed length
+            
+            // Update chart
+            if (tradingState.priceChart) {
+                tradingState.priceChart.data.datasets[0].data = priceHistory;
+                tradingState.priceChart.update('none');
+            }
+            
+            // Update position info if we have a position
+            if (tradingState.positionSize > 0) {
+                updatePositionInfo();
+            }
+        }
+        
+        function logTrade(message) {
+            const logContainer = document.getElementById('tradingLog');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-entry';
+            logEntry.innerHTML = `<span class="log-time">[${timestamp}]</span> ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        function exportToGoogleDocsAndEmail() {
+            const email = document.getElementById('emailInput').value;
+            if (!email) {
+                alert('Please enter your email address');
+                return;
+            }
+            
+            const exportStatus = document.getElementById('exportStatus');
+            exportStatus.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Generating report and sending to email...</p>';
+            
+            // Simulate API call
+            setTimeout(() => {
+                exportStatus.innerHTML = `
+                    <p style="color: #00d4aa;">
+                        <i class="fas fa-check-circle"></i> Report sent successfully to ${email}
+                    </p>
+                    <p style="font-size: 12px; margin-top: 10px;">
+                        Your trading report has been generated and emailed to you. 
+                        ${tradingState.reportFrequency !== 'manual' ? `Next report in ${tradingState.reportFrequency} hours.` : ''}
+                    </p>
+                `;
+                logTrade(`Performance report emailed to ${email}`);
+            }, 2000);
+        }
+        
+        function setupScheduledExport() {
+            const email = document.getElementById('emailInput').value;
+            
+            if (!email) {
+                alert('Please enter your email address');
+                return;
+            }
+            
+            const exportStatus = document.getElementById('exportStatus');
+            
+            if (tradingState.reportFrequency === 'manual') {
+                exportStatus.innerHTML = '<p>Scheduled reports disabled. Use manual export only.</p>';
+                return;
+            }
+            
+            exportStatus.innerHTML = `
+                <p style="color: #00d4aa;">
+                    <i class="fas fa-check-circle"></i> Reports scheduled every ${tradingState.reportFrequency} hours for ${email}
+                </p>
+                <p style="font-size: 12px; margin-top: 10px;">
+                    You will receive automated trading reports every ${tradingState.reportFrequency} hours.
+                    The next report will be sent automatically.
+                </p>
+            `;
+            
+            logTrade(`Scheduled ${tradingState.reportFrequency}-hour reports enabled for ${email}`);
+        }
+
+        // Handle window resize for responsive behavior
+        window.addEventListener('resize', function() {
+            if (window.innerWidth >= 1024) {
+                // Show all panels on desktop
+                document.querySelectorAll('.panel').forEach(panel => {
+                    panel.style.display = 'block';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
