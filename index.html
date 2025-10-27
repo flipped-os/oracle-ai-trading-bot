@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oracle AI - Advanced Trading Bot</title>
+    <title>Oracle AI - Professional Trading Bot</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.ethers.io/lib/ethers-5.7.umd.min.js" type="application/javascript"></script>
+    <!-- WalletConnect -->
+    <script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
+    <script src="https://unpkg.com/@walletconnect/ethereum-provider@2.9.0/dist/umd/index.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -15,11 +18,27 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
+        :root {
+            --primary: #00d4aa;
+            --primary-dark: #00aa88;
+            --secondary: #0099ff;
+            --background: #0c0c1d;
+            --card-bg: #1a1a2e;
+            --card-border: #2a2a4a;
+            --text-primary: #ffffff;
+            --text-secondary: #8888aa;
+            --text-muted: #666688;
+            --danger: #ff4444;
+            --warning: #ffaa00;
+            --success: #00d4aa;
+        }
+
         body {
-            background: linear-gradient(135deg, #0c0c1d, #1a1a2e);
-            color: #ffffff;
+            background: linear-gradient(135deg, var(--background), #1a1a2e);
+            color: var(--text-primary);
             min-height: 100vh;
             padding: 15px;
+            line-height: 1.6;
         }
 
         .container {
@@ -33,7 +52,7 @@
             flex-direction: column;
             gap: 15px;
             padding: 15px 0;
-            border-bottom: 1px solid #2a2a4a;
+            border-bottom: 1px solid var(--card-border);
             margin-bottom: 20px;
         }
 
@@ -52,7 +71,7 @@
 
         .logo h1 {
             font-size: clamp(20px, 4vw, 28px);
-            background: linear-gradient(90deg, #00d4aa, #0099ff);
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             font-weight: 700;
@@ -60,7 +79,16 @@
 
         .logo-icon {
             font-size: clamp(24px, 5vw, 32px);
-            color: #00d4aa;
+            color: var(--primary);
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 24px;
+            cursor: pointer;
         }
 
         .wallet-section {
@@ -70,6 +98,20 @@
             width: 100%;
         }
 
+        @media (min-width: 768px) {
+            header {
+                flex-direction: row;
+                align-items: center;
+            }
+            
+            .wallet-section {
+                width: auto;
+                flex-direction: row;
+                align-items: center;
+                gap: 15px;
+            }
+        }
+
         .wallet-status {
             display: flex;
             align-items: center;
@@ -77,7 +119,7 @@
             background: rgba(26, 26, 46, 0.8);
             padding: 10px 15px;
             border-radius: 12px;
-            border: 1px solid #2a2a4a;
+            border: 1px solid var(--card-border);
         }
 
         .wallet-info {
@@ -88,23 +130,23 @@
         }
 
         .wallet-address {
-            background: #0f0f23;
+            background: var(--background);
             padding: 6px 12px;
             border-radius: 20px;
             font-family: monospace;
             font-size: 12px;
-            border: 1px solid #2a2a4a;
+            border: 1px solid var(--card-border);
         }
 
         .wallet-balance {
             font-size: 16px;
             font-weight: bold;
-            color: #00d4aa;
+            color: var(--primary);
         }
 
         .connected-badge {
-            background: #00d4aa;
-            color: #0c0c1d;
+            background: var(--primary);
+            color: var(--background);
             padding: 4px 8px;
             border-radius: 12px;
             font-size: 10px;
@@ -112,7 +154,7 @@
         }
 
         .connect-wallet-btn {
-            background: linear-gradient(135deg, #00d4aa, #0099ff);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             border: none;
             border-radius: 10px;
             padding: 10px 20px;
@@ -124,9 +166,71 @@
             width: 100%;
         }
 
+        @media (min-width: 768px) {
+            .connect-wallet-btn {
+                width: auto;
+            }
+        }
+
         .connect-wallet-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(0, 212, 170, 0.4);
+        }
+
+        .connect-wallet-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Mobile Menu */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--background);
+            z-index: 1000;
+            padding: 20px;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .mobile-nav.active {
+            display: flex;
+        }
+
+        .mobile-nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-mobile-nav {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .mobile-nav-item {
+            padding: 15px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .mobile-nav-item:hover {
+            border-color: var(--primary);
+            transform: translateX(5px);
         }
 
         /* Dashboard Styles */
@@ -138,8 +242,8 @@
         }
 
         .dashboard-card {
-            background: #1a1a2e;
-            border: 1px solid #2a2a4a;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 15px;
             text-align: center;
@@ -150,11 +254,11 @@
 
         .dashboard-card:hover {
             transform: translateY(-3px);
-            border-color: #00d4aa;
+            border-color: var(--primary);
         }
 
         .dashboard-label {
-            color: #8888aa;
+            color: var(--text-secondary);
             font-size: 12px;
             margin-bottom: 6px;
         }
@@ -165,121 +269,15 @@
         }
 
         .positive {
-            color: #00d4aa;
+            color: var(--success);
         }
 
         .negative {
-            color: #ff4444;
+            color: var(--danger);
         }
 
         .neutral {
-            color: #ffaa00;
-        }
-
-        /* Buckets Panel */
-        .buckets-panel {
-            background: #1a1a2e;
-            border: 1px solid #2a2a4a;
-            border-radius: 12px;
-            padding: 0;
-            margin: 15px 0;
-            max-height: 0;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .buckets-panel.active {
-            max-height: 600px;
-            padding: 15px;
-            overflow-y: auto;
-        }
-
-        .buckets-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-
-        .buckets-title {
-            color: #00d4aa;
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .close-buckets {
-            background: none;
-            border: none;
-            color: #8888aa;
-            font-size: 18px;
-            cursor: pointer;
-        }
-
-        .buckets-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 12px;
-        }
-
-        .bucket-card {
-            background: #0f0f23;
-            border: 1px solid #2a2a4a;
-            border-radius: 10px;
-            padding: 15px;
-            transition: all 0.3s;
-        }
-
-        .bucket-card:hover {
-            border-color: #00d4aa;
-            transform: translateY(-2px);
-        }
-
-        .bucket-name {
-            color: #00d4aa;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .bucket-range {
-            color: #8888aa;
-            font-size: 11px;
-            margin-bottom: 12px;
-        }
-
-        .bucket-performance {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .bucket-label {
-            color: #ccccdd;
-            font-size: 12px;
-        }
-
-        .bucket-value {
-            font-size: 16px;
-            font-weight: bold;
-        }
-
-        .bucket-status {
-            display: inline-block;
-            padding: 2px 6px;
-            border-radius: 8px;
-            font-size: 9px;
-            font-weight: bold;
-            margin-left: 6px;
-        }
-
-        .status-active {
-            background: rgba(0, 212, 170, 0.2);
-            color: #00d4aa;
-        }
-
-        .status-inactive {
-            background: rgba(136, 136, 170, 0.2);
-            color: #8888aa;
+            color: var(--warning);
         }
 
         /* Main Content */
@@ -299,27 +297,11 @@
             .main-content {
                 grid-template-columns: 1fr 1fr 1fr;
             }
-            
-            header {
-                flex-direction: row;
-                align-items: center;
-            }
-            
-            .wallet-section {
-                width: auto;
-                flex-direction: row;
-                align-items: center;
-                gap: 15px;
-            }
-            
-            .connect-wallet-btn {
-                width: auto;
-            }
         }
 
         .panel {
-            background: #1a1a2e;
-            border: 1px solid #2a2a4a;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
             border-radius: 16px;
             padding: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -334,11 +316,11 @@
 
         .panel-header h2 {
             font-size: clamp(18px, 3vw, 22px);
-            color: #00d4aa;
+            color: var(--primary);
         }
 
         .live-badge {
-            background: #ff4444;
+            background: var(--danger);
             color: white;
             padding: 4px 8px;
             border-radius: 12px;
@@ -346,6 +328,13 @@
             animation: pulse 2s infinite;
         }
 
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
+        /* Input Groups */
         .input-group {
             margin-bottom: 15px;
             position: relative;
@@ -354,16 +343,16 @@
         .input-label {
             display: block;
             margin-bottom: 6px;
-            color: #ccccdd;
+            color: var(--text-secondary);
             font-size: 13px;
         }
 
         .oracle-input {
-            background: #0f0f23;
-            border: 1px solid #2a2a4a;
+            background: var(--background);
+            border: 1px solid var(--card-border);
             border-radius: 10px;
             padding: 12px 14px;
-            color: white;
+            color: var(--text-primary);
             font-size: 14px;
             width: 100%;
             transition: all 0.3s;
@@ -371,77 +360,11 @@
 
         .oracle-input:focus {
             outline: none;
-            border-color: #00d4aa;
+            border-color: var(--primary);
             box-shadow: 0 0 0 2px rgba(0, 212, 170, 0.2);
         }
 
-        .search-results {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: #0f0f23;
-            border: 1px solid #2a2a4a;
-            border-radius: 10px;
-            max-height: 250px;
-            overflow-y: auto;
-            z-index: 100;
-            display: none;
-        }
-
-        .search-result {
-            padding: 10px 12px;
-            border-bottom: 1px solid #2a2a4a;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .search-result:hover {
-            background: #1a1a2e;
-        }
-
-        .search-result:last-child {
-            border-bottom: none;
-        }
-
-        .token-name {
-            color: #00d4aa;
-            font-weight: bold;
-            margin-bottom: 4px;
-            font-size: 13px;
-        }
-
-        .token-info {
-            color: #8888aa;
-            font-size: 11px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .token-price {
-            color: #ffffff;
-        }
-
-        .token-change-positive {
-            color: #00d4aa;
-        }
-
-        .token-change-negative {
-            color: #ff4444;
-        }
-
-        .token-change-neutral {
-            color: #ffaa00;
-        }
-
-        .chain-badge {
-            background: #2a2a4a;
-            padding: 2px 6px;
-            border-radius: 8px;
-            font-size: 9px;
-            margin-left: 6px;
-        }
-
+        /* Buttons */
         .btn-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -462,7 +385,7 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #00d4aa, #0099ff);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
         }
 
         .btn-primary:hover {
@@ -471,7 +394,7 @@
         }
 
         .btn-danger {
-            background: linear-gradient(135deg, #ff6b6b, #ff4444);
+            background: linear-gradient(135deg, #ff6b6b, var(--danger));
         }
 
         .btn-danger:hover {
@@ -479,6 +402,13 @@
             box-shadow: 0 6px 20px rgba(255, 68, 68, 0.4);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        /* Stats Grid */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
@@ -487,15 +417,15 @@
         }
 
         .stat-card {
-            background: #0f0f23;
-            border: 1px solid #2a2a4a;
+            background: var(--background);
+            border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 15px;
             text-align: center;
         }
 
         .stat-label {
-            color: #8888aa;
+            color: var(--text-secondary);
             font-size: 12px;
             margin-bottom: 6px;
         }
@@ -505,14 +435,15 @@
             font-weight: bold;
         }
 
+        /* Chart */
         .chart-container {
             width: 100%;
             height: 250px;
-            background: #0f0f23;
+            background: var(--background);
             border-radius: 12px;
             margin: 15px 0;
             padding: 12px;
-            border: 1px solid #2a2a4a;
+            border: 1px solid var(--card-border);
         }
 
         @media (min-width: 768px) {
@@ -521,28 +452,30 @@
             }
         }
 
+        /* Log Container */
         .log-container {
             height: 180px;
             overflow-y: auto;
-            background: #0f0f23;
+            background: var(--background);
             border-radius: 12px;
             padding: 12px;
             font-size: 12px;
-            border: 1px solid #2a2a4a;
+            border: 1px solid var(--card-border);
             margin-top: 15px;
         }
 
         .log-entry {
             margin-bottom: 6px;
             padding-bottom: 6px;
-            border-bottom: 1px solid #2a2a4a;
+            border-bottom: 1px solid var(--card-border);
         }
 
         .log-time {
-            color: #8888aa;
+            color: var(--text-secondary);
             font-size: 10px;
         }
 
+        /* Token Suggestions */
         .token-suggestions {
             display: flex;
             flex-wrap: wrap;
@@ -552,7 +485,7 @@
 
         .token-suggestion {
             background: rgba(0, 212, 170, 0.1);
-            border: 1px solid #00d4aa;
+            border: 1px solid var(--primary);
             border-radius: 20px;
             padding: 6px 12px;
             font-size: 12px;
@@ -565,12 +498,13 @@
             transform: translateY(-2px);
         }
 
+        /* Analysis Result */
         .analysis-result {
             margin-top: 15px;
             padding: 15px;
-            background: #0f0f23;
+            background: var(--background);
             border-radius: 12px;
-            border: 1px solid #2a2a4a;
+            border: 1px solid var(--card-border);
         }
 
         .risk-indicator {
@@ -584,22 +518,23 @@
 
         .risk-low {
             background: rgba(0, 212, 170, 0.2);
-            color: #00d4aa;
+            color: var(--success);
         }
 
         .risk-medium {
             background: rgba(255, 170, 0, 0.2);
-            color: #ffaa00;
+            color: var(--warning);
         }
 
         .risk-high {
             background: rgba(255, 68, 68, 0.2);
-            color: #ff4444;
+            color: var(--danger);
         }
 
+        /* Position Info */
         .position-info {
             background: rgba(0, 212, 170, 0.1);
-            border: 1px solid #00d4aa;
+            border: 1px solid var(--primary);
             border-radius: 12px;
             padding: 15px;
             margin: 15px 0;
@@ -617,53 +552,48 @@
         }
 
         .metric-value {
-            color: #ffffff;
+            color: var(--text-primary);
             font-weight: bold;
             font-size: 12px;
             margin-bottom: 2px;
         }
 
         .metric-label {
-            color: #8888aa;
+            color: var(--text-secondary);
             font-size: 9px;
         }
 
         .ai-recommendation {
             background: rgba(0, 212, 170, 0.1);
-            border: 1px solid #00d4aa;
+            border: 1px solid var(--primary);
             border-radius: 8px;
             padding: 10px;
             margin-top: 8px;
         }
 
         .recommendation-title {
-            color: #00d4aa;
+            color: var(--primary);
             font-weight: bold;
             margin-bottom: 4px;
             font-size: 11px;
         }
 
         .recommendation-text {
-            color: #ccccdd;
+            color: var(--text-secondary);
             font-size: 10px;
             line-height: 1.4;
         }
 
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-
+        /* Auto Mode */
         .auto-mode {
             display: flex;
             flex-direction: column;
             gap: 10px;
             margin: 15px 0;
             padding: 12px;
-            background: #1a1a2e;
+            background: var(--card-bg);
             border-radius: 12px;
-            border: 1px solid #2a2a4a;
+            border: 1px solid var(--card-border);
         }
 
         @media (min-width: 480px) {
@@ -683,7 +613,7 @@
         .toggle-label {
             font-size: 14px;
             font-weight: 600;
-            color: #00d4aa;
+            color: var(--primary);
         }
 
         .toggle-switch {
@@ -706,7 +636,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background-color: #2a2a4a;
+            background-color: var(--card-border);
             transition: .4s;
             border-radius: 34px;
         }
@@ -724,13 +654,14 @@
         }
 
         input:checked + .slider {
-            background: linear-gradient(135deg, #00d4aa, #0099ff);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
         }
 
         input:checked + .slider:before {
             transform: translateX(22px);
         }
 
+        /* Subscription Plans */
         .subscription-plans {
             display: grid;
             grid-template-columns: 1fr;
@@ -745,8 +676,8 @@
         }
 
         .plan-card {
-            background: #0f0f23;
-            border: 1px solid #2a2a4a;
+            background: var(--background);
+            border: 1px solid var(--card-border);
             border-radius: 12px;
             padding: 20px;
             text-align: center;
@@ -754,12 +685,17 @@
         }
 
         .plan-card:hover {
-            border-color: #00d4aa;
+            border-color: var(--primary);
             transform: translateY(-3px);
         }
 
+        .plan-card.featured {
+            border-color: var(--primary);
+            background: rgba(0, 212, 170, 0.05);
+        }
+
         .plan-name {
-            color: #00d4aa;
+            color: var(--primary);
             font-size: 16px;
             font-weight: bold;
             margin-bottom: 8px;
@@ -778,8 +714,8 @@
 
         .plan-features li {
             padding: 6px 0;
-            border-bottom: 1px solid #2a2a4a;
-            color: #ccccdd;
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text-secondary);
             font-size: 12px;
         }
 
@@ -787,6 +723,7 @@
             border-bottom: none;
         }
 
+        /* Report Frequency */
         .report-frequency {
             display: flex;
             flex-direction: column;
@@ -804,8 +741,8 @@
             flex: 1;
             text-align: center;
             padding: 10px;
-            background: #0f0f23;
-            border: 1px solid #2a2a4a;
+            background: var(--background);
+            border: 1px solid var(--card-border);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.2s;
@@ -814,12 +751,13 @@
 
         .frequency-option.active {
             background: rgba(0, 212, 170, 0.1);
-            border-color: #00d4aa;
+            border-color: var(--primary);
         }
 
+        /* Bucket Strategies */
         .bucket-strategy {
             background: rgba(0, 212, 170, 0.05);
-            border: 1px solid #2a2a4a;
+            border: 1px solid var(--card-border);
             border-radius: 10px;
             padding: 12px;
             margin: 8px 0;
@@ -833,7 +771,7 @@
         }
 
         .strategy-name {
-            color: #00d4aa;
+            color: var(--primary);
             font-weight: bold;
             font-size: 13px;
         }
@@ -856,44 +794,156 @@
             justify-content: space-between;
         }
 
+        /* Search Results */
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--background);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            max-height: 250px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+
+        .search-result {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--card-border);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-result:hover {
+            background: var(--card-bg);
+        }
+
+        .search-result:last-child {
+            border-bottom: none;
+        }
+
+        .token-name {
+            color: var(--primary);
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .token-info {
+            color: var(--text-secondary);
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .token-price {
+            color: var(--text-primary);
+        }
+
+        .token-change-positive {
+            color: var(--success);
+        }
+
+        .token-change-negative {
+            color: var(--danger);
+        }
+
+        .chain-badge {
+            background: var(--card-border);
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 9px;
+            margin-left: 6px;
+        }
+
+        /* Footer */
         footer {
             text-align: center;
             margin-top: 30px;
             padding-top: 15px;
-            border-top: 1px solid #2a2a4a;
-            color: #8888aa;
+            border-top: 1px solid var(--card-border);
+            color: var(--text-secondary);
             font-size: 12px;
         }
 
-        /* Mobile Menu */
-        .mobile-menu {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
+        /* Loading States */
+        .loading {
+            opacity: 0.7;
+            pointer-events: none;
         }
 
-        .mobile-nav-btn {
-            background: #1a1a2e;
-            border: 1px solid #2a2a4a;
-            border-radius: 8px;
-            padding: 10px;
-            color: #00d4aa;
+        .loading::after {
+            content: " (Loading...)";
+            color: var(--primary);
+        }
+
+        /* Wallet Modal */
+        .wallet-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(12, 12, 29, 0.9);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .wallet-modal.active {
+            display: flex;
+        }
+
+        .wallet-modal-content {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .wallet-option {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            margin: 10px 0;
+            background: var(--background);
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
             cursor: pointer;
             transition: all 0.3s;
-            flex: 1;
-            margin: 0 5px;
-            text-align: center;
-            font-size: 12px;
         }
 
-        .mobile-nav-btn.active {
-            background: rgba(0, 212, 170, 0.1);
-            border-color: #00d4aa;
+        .wallet-option:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
         }
 
-        @media (min-width: 1024px) {
-            .mobile-menu {
-                display: none;
+        .wallet-icon {
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+        }
+
+        @media (max-width: 767px) {
+            .mobile-menu-btn {
+                display: block;
             }
         }
     </style>
@@ -908,6 +958,9 @@
                     </div>
                     <h1>Oracle AI</h1>
                 </div>
+                <button class="mobile-menu-btn" id="mobileMenuBtn">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
             <div class="wallet-section">
                 <div class="wallet-status">
@@ -924,40 +977,84 @@
         </header>
 
         <!-- Mobile Navigation -->
-        <div class="mobile-menu">
-            <button class="mobile-nav-btn active" data-panel="trading">Trading</button>
-            <button class="mobile-nav-btn" data-panel="analysis">Analysis</button>
-            <button class="mobile-nav-btn" data-panel="reports">Reports</button>
+        <div class="mobile-nav" id="mobileNav">
+            <div class="mobile-nav-header">
+                <h3>Navigation</h3>
+                <button class="close-mobile-nav" id="closeMobileNav">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <a href="#" class="mobile-nav-item" data-panel="trading">
+                <i class="fas fa-coins"></i> Live Trading
+            </a>
+            <a href="#" class="mobile-nav-item" data-panel="analysis">
+                <i class="fas fa-chart-line"></i> Token Analysis
+            </a>
+            <a href="#" class="mobile-nav-item" data-panel="reports">
+                <i class="fas fa-file-export"></i> Reports & Subscriptions
+            </a>
+            <a href="#" class="mobile-nav-item" data-panel="strategies">
+                <i class="fas fa-chess-board"></i> Trading Strategies
+            </a>
+        </div>
+
+        <!-- Wallet Connection Modal -->
+        <div class="wallet-modal" id="walletModal">
+            <div class="wallet-modal-content">
+                <button class="close-modal" id="closeWalletModal">
+                    <i class="fas fa-times"></i>
+                </button>
+                <h3 style="margin-bottom: 20px; color: var(--primary);">Connect Wallet</h3>
+                
+                <div class="wallet-option" id="metamaskOption">
+                    <div class="wallet-icon">
+                        <i class="fab fa-ethereum"></i>
+                    </div>
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold;">MetaMask</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Browser Extension</div>
+                    </div>
+                </div>
+
+                <div class="wallet-option" id="walletConnectOption">
+                    <div class="wallet-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold;">WalletConnect</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Mobile Wallets</div>
+                    </div>
+                </div>
+
+                <div class="wallet-option" id="coinbaseOption">
+                    <div class="wallet-icon">
+                        <i class="fab fa-bitcoin"></i>
+                    </div>
+                    <div style="text-align: left;">
+                        <div style="font-weight: bold;">Coinbase Wallet</div>
+                        <div style="font-size: 12px; color: var(--text-secondary);">Coinbase App</div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Dashboard Cards -->
         <div class="dashboard">
             <div class="dashboard-card">
                 <div class="dashboard-label">Active Buckets</div>
-                <div class="dashboard-value" id="activeBuckets">6</div>
+                <div class="dashboard-value" id="activeBuckets">0</div>
             </div>
             <div class="dashboard-card" id="activePositionsCard">
                 <div class="dashboard-label">Active Positions</div>
-                <div class="dashboard-value" id="activePositions">68</div>
+                <div class="dashboard-value" id="activePositions">0</div>
             </div>
             <div class="dashboard-card">
                 <div class="dashboard-label">Current P&L</div>
-                <div class="dashboard-value positive" id="currentPnl">+8.8%</div>
+                <div class="dashboard-value" id="currentPnl">$0.00</div>
             </div>
             <div class="dashboard-card">
                 <div class="dashboard-label">Social Signals</div>
-                <div class="dashboard-value" id="socialSignals">24</div>
-            </div>
-        </div>
-
-        <!-- Buckets Panel (Dropdown) -->
-        <div class="buckets-panel" id="bucketsPanel">
-            <div class="buckets-header">
-                <h3 class="buckets-title">Performance Buckets</h3>
-                <button class="close-buckets" id="closeBuckets">&times;</button>
-            </div>
-            <div class="buckets-grid" id="bucketsGrid">
-                <!-- Buckets will be dynamically inserted here -->
+                <div class="dashboard-value" id="socialSignals">0</div>
             </div>
         </div>
 
@@ -965,11 +1062,11 @@
             <div class="toggle-container">
                 <span class="toggle-label">Auto Trading Mode</span>
                 <label class="toggle-switch">
-                    <input type="checkbox" id="autoModeToggle">
+                    <input type="checkbox" id="autoModeToggle" disabled>
                     <span class="slider"></span>
                 </label>
             </div>
-            <div id="autoModeStatus">Inactive</div>
+            <div id="autoModeStatus">Connect Wallet to Enable</div>
         </div>
 
         <div class="main-content">
@@ -981,12 +1078,12 @@
                 
                 <div class="input-group">
                     <label class="input-label">Token Name or Contract Address</label>
-                    <input type="text" class="oracle-input" id="tokenInput" placeholder="Enter token name or contract address" value="AVNT">
+                    <input type="text" class="oracle-input" id="tokenInput" placeholder="Enter token name or contract address" disabled>
                     <div class="search-results" id="searchResults"></div>
                 </div>
                 
-                <button class="btn btn-primary" id="analyzeBtn" style="width: 100%;">
-                    <i class="fas fa-search"></i> Analyze Token
+                <button class="btn btn-primary" id="analyzeBtn" style="width: 100%;" disabled>
+                    <i class="fas fa-search"></i> Connect Wallet to Analyze
                 </button>
                 
                 <div class="token-suggestions">
@@ -998,33 +1095,7 @@
                 </div>
                 
                 <div class="analysis-result" id="analysisResult">
-                    <p>Analyze a token to see detailed information and trading recommendations.</p>
-                </div>
-
-                <!-- Social Sentiment Analysis -->
-                <div class="analysis-result">
-                    <h3 style="margin-bottom: 10px; color: #00d4aa;">Social Sentiment Analysis</h3>
-                    <div class="metric-grid">
-                        <div class="metric-item">
-                            <div class="metric-value positive">85%</div>
-                            <div class="metric-label">Positive</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-value">12%</div>
-                            <div class="metric-label">Neutral</div>
-                        </div>
-                        <div class="metric-item">
-                            <div class="metric-value negative">3%</div>
-                            <div class="metric-label">Negative</div>
-                        </div>
-                    </div>
-                    <div class="ai-recommendation">
-                        <div class="recommendation-title">SOCIAL BUZZ DETECTED</div>
-                        <div class="recommendation-text">
-                            High engagement detected across Twitter, Telegram, and Discord. 
-                            Mentions increased by 240% in last 24 hours. Strong community growth.
-                        </div>
-                    </div>
+                    <p>Connect your wallet to access real-time token analysis and AI-powered insights.</p>
                 </div>
             </div>
             
@@ -1038,28 +1109,28 @@
                 <div class="stats-grid">
                     <div class="stat-card">
                         <div class="stat-label">EQUITY</div>
-                        <div class="stat-value positive" id="equityValue">$2,650.38</div>
+                        <div class="stat-value" id="equityValue">$0.00</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">REALIZED P&L</div>
-                        <div class="stat-value positive" id="realizedPnlValue">$145.52</div>
+                        <div class="stat-value" id="realizedPnlValue">$0.00</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">UNREALIZED P&L</div>
-                        <div class="stat-value positive" id="unrealizedPnlValue">$35.62</div>
+                        <div class="stat-value" id="unrealizedPnlValue">$0.00</div>
                     </div>
                 </div>
                 
                 <div class="input-group">
                     <label class="input-label">Trade Amount (USD)</label>
-                    <input type="number" class="oracle-input" id="tradeAmount" value="100" min="10" step="10">
+                    <input type="number" class="oracle-input" id="tradeAmount" value="100" min="10" step="10" disabled>
                 </div>
                 
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="buyBtn">
+                    <button class="btn btn-primary" id="buyBtn" disabled>
                         <i class="fas fa-arrow-up"></i> BUY
                     </button>
-                    <button class="btn btn-danger" id="sellBtn">
+                    <button class="btn btn-danger" id="sellBtn" disabled>
                         <i class="fas fa-arrow-down"></i> SELL
                     </button>
                 </div>
@@ -1070,18 +1141,15 @@
                 
                 <div class="position-info" id="positionInfo">
                     <h3><i class="fas fa-chart-bar"></i> Current Position</h3>
-                    <p>No active position. Analyze a token and execute a trade to see position details.</p>
+                    <p>Connect your wallet to start trading and view position details.</p>
                 </div>
                 
                 <div class="log-container" id="tradingLog">
                     <div class="log-entry">
-                        <span class="log-time">[12:45:23]</span> Wallet connected successfully
+                        <span class="log-time">[System]</span> Welcome to Oracle AI Trading Bot
                     </div>
                     <div class="log-entry">
-                        <span class="log-time">[12:46:10]</span> Trading interface initialized
-                    </div>
-                    <div class="log-entry">
-                        <span class="log-time">[12:47:35]</span> AVNT trade completed: +48.48%
+                        <span class="log-time">[System]</span> Connect your wallet to begin trading
                     </div>
                 </div>
             </div>
@@ -1094,7 +1162,7 @@
                 
                 <div class="input-group">
                     <label class="input-label">Your Email for Reports</label>
-                    <input type="email" class="oracle-input" id="emailInput" placeholder="your-email@gmail.com" value="lekangarena@gmail.com">
+                    <input type="email" class="oracle-input" id="emailInput" placeholder="your-email@gmail.com" value="lekangarena@gmail.com" disabled>
                 </div>
                 
                 <div class="report-frequency">
@@ -1104,20 +1172,20 @@
                 </div>
                 
                 <div class="btn-group">
-                    <button class="btn btn-primary" id="exportBtn">
-                        <i class="fas fa-file-export"></i> Create Report & Email
+                    <button class="btn btn-primary" id="exportBtn" disabled>
+                        <i class="fas fa-file-export"></i> Connect Wallet to Export
                     </button>
-                    <button class="btn btn-primary" id="scheduleExportBtn">
-                        <i class="fas fa-clock"></i> Schedule Reports
+                    <button class="btn btn-primary" id="scheduleExportBtn" disabled>
+                        <i class="fas fa-clock"></i> Connect Wallet to Schedule
                     </button>
                 </div>
                 
                 <div class="analysis-result" id="exportStatus">
-                    <p>Enter your email and select frequency to get automated reports.</p>
+                    <p>Connect your wallet to access automated reporting features.</p>
                 </div>
 
                 <!-- Subscription Plans -->
-                <h3 style="margin: 20px 0 15px 0; color: #00d4aa;">Subscription Plans</h3>
+                <h3 style="margin: 20px 0 15px 0; color: var(--primary);">Subscription Plans</h3>
                 <div class="subscription-plans">
                     <div class="plan-card">
                         <div class="plan-name">BASIC</div>
@@ -1128,9 +1196,9 @@
                             <li>Daily Reports</li>
                             <li>Community Access</li>
                         </ul>
-                        <button class="btn btn-primary" style="width: 100%;">Subscribe</button>
+                        <button class="btn btn-primary" style="width: 100%;" disabled>Connect Wallet</button>
                     </div>
-                    <div class="plan-card">
+                    <div class="plan-card featured">
                         <div class="plan-name">PRO</div>
                         <div class="plan-price">$500</div>
                         <ul class="plan-features">
@@ -1139,7 +1207,7 @@
                             <li>Real-time Alerts</li>
                             <li>Priority Support</li>
                         </ul>
-                        <button class="btn btn-primary" style="width: 100%;">Subscribe</button>
+                        <button class="btn btn-primary" style="width: 100%;" disabled>Connect Wallet</button>
                     </div>
                     <div class="plan-card">
                         <div class="plan-name">ELITE</div>
@@ -1150,16 +1218,16 @@
                             <li>24/7 Support</li>
                             <li>VIP Community</li>
                         </ul>
-                        <button class="btn btn-primary" style="width: 100%;">Subscribe</button>
+                        <button class="btn btn-primary" style="width: 100%;" disabled>Connect Wallet</button>
                     </div>
                 </div>
 
                 <!-- Bucket Strategies -->
-                <h3 style="margin: 20px 0 15px 0; color: #00d4aa;">Trading Strategies</h3>
+                <h3 style="margin: 20px 0 15px 0; color: var(--primary);">Trading Strategies</h3>
                 <div class="bucket-strategy">
                     <div class="strategy-header">
                         <div class="strategy-name">Strategy A - Conservative</div>
-                        <span class="risk-indicator risk-low">LOW RISK</span>
+                        <span class="risk-indicator risk-low">BASIC+</span>
                     </div>
                     <div class="strategy-details">
                         <div class="strategy-item">
@@ -1184,7 +1252,7 @@
                 <div class="bucket-strategy">
                     <div class="strategy-header">
                         <div class="strategy-name">Strategy B - Balanced</div>
-                        <span class="risk-indicator risk-medium">MEDIUM RISK</span>
+                        <span class="risk-indicator risk-medium">PRO+</span>
                     </div>
                     <div class="strategy-details">
                         <div class="strategy-item">
@@ -1209,7 +1277,7 @@
                 <div class="bucket-strategy">
                     <div class="strategy-header">
                         <div class="strategy-name">Strategy C - Aggressive</div>
-                        <span class="risk-indicator risk-high">HIGH RISK</span>
+                        <span class="risk-indicator risk-high">ELITE ONLY</span>
                     </div>
                     <div class="strategy-details">
                         <div class="strategy-item">
@@ -1243,412 +1311,356 @@
 
     <script>
         // =============================================
-        // CONFIGURATION
-        // =============================================
-
-        // Wallet Configuration
-        const WALLET_ADDRESS = "0x742d35Cc6634C893292C6E4Ee57D5a2e4E57D5a2";
-
-        // Trading Configuration
-        const TRADING_CONFIG = {
-            initialEquity: 2435.00,
-            equity: 2650.38,
-            realizedPnl: 145.52,
-            unrealizedPnl: 35.62,
-            activePositions: 68,
-            recentTrade: {
-                token: "AVNT",
-                pnl: 48.48
-            }
-        };
-
-        // Performance Buckets Configuration
-        const PERFORMANCE_BUCKETS = [
-            { name: "Mid Cap Growth", range: "25M-50M MC", performance: 3.2, description: "High-growth mid caps", active: true },
-            { name: "Small Cap Growth", range: "2M-5M MC", performance: 2.8, description: "Explosive growth small caps", active: true },
-            { name: "Small Cap Gems", range: "5M-10M MC", performance: 1.8, description: "Hidden gems in small cap space", active: true },
-            { name: "Mid Cap Stars", range: "50M-100M MC", performance: 0.9, description: "Promising mid cap performers", active: true },
-            { name: "Large Cap Growth", range: "250M-500M MC", performance: 0.4, description: "High-growth large caps", active: true },
-            { name: "Mega Cap Growth", range: "5B-10B MC", performance: 0.3, description: "Large caps with growth potential", active: true },
-        ];
-
-        // Trading Strategies from your spreadsheet
-        const TRADING_STRATEGIES = {
-            A: {
-                name: "Conservative",
-                tp: [2, 4, 6, 8, 10],
-                sl: [1, 2, 3, 4, 5],
-                liquidity: [20, 20, 20, 20, 20],
-                marketCap: "Large Cap (1B+)",
-                risk: "low"
-            },
-            B: {
-                name: "Balanced", 
-                tp: [3, 6, 9, 12, 15],
-                sl: [2, 4, 6, 8, 10],
-                liquidity: [10, 15, 20, 25, 30],
-                marketCap: "Mid Cap (100M-1B)",
-                risk: "medium"
-            },
-            C: {
-                name: "Aggressive",
-                tp: [5, 10, 15, 20, 25],
-                sl: [3, 5, 7, 9, 12],
-                liquidity: [4, 8, 16, 32, 40],
-                marketCap: "Small Cap",
-                risk: "high"
-            }
-        };
-
-        // =============================================
-        // TRADING STATE
+        // TRADING BOT STATE MANAGEMENT
         // =============================================
         
         const tradingState = {
-            equity: TRADING_CONFIG.equity,
-            realizedPnl: TRADING_CONFIG.realizedPnl,
-            unrealizedPnl: TRADING_CONFIG.unrealizedPnl,
-            activePositions: TRADING_CONFIG.activePositions,
-            positionSize: 0,
-            currentToken: "AVNT",
-            currentPrice: 0,
-            currentPair: null,
-            trades: [],
-            performanceBuckets: PERFORMANCE_BUCKETS,
+            // Wallet State
             walletConnected: false,
-            currentStrategy: "B",
-            reportFrequency: "12"
+            walletAddress: null,
+            walletBalance: '0.00',
+            provider: null,
+            signer: null,
+            
+            // Trading State
+            equity: '0.00',
+            realizedPnl: '0.00',
+            unrealizedPnl: '0.00',
+            activePositions: 0,
+            positionSize: 0,
+            currentToken: null,
+            currentPrice: 0,
+            
+            // Subscription State
+            currentPlan: null,
+            subscriptionActive: false,
+            
+            // UI State
+            reportFrequency: '12',
+            autoTrading: false,
+            
+            // Data
+            trades: [],
+            performanceBuckets: [],
+            priceChart: null
         };
-        
-        // Price history for chart
-        const priceHistory = Array.from({length: 20}, (_, i) => {
-            const basePrice = 1.50;
-            const volatility = 0.3;
-            return basePrice + Math.sin(i * 0.5) * volatility + Math.random() * 0.2;
-        });
-        
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-        });
 
-        function initializeApp() {
-            // Set up mobile navigation
-            setupMobileNavigation();
-            
-            // Initialize dashboard
-            updateDashboard();
-            
-            // Initialize trading UI
-            updateTradingUI();
-            
-            // Initialize chart
-            initializeChart();
-            
-            // Set up event listeners
-            setupEventListeners();
-            
-            // Add initial log entries
-            logTrade("Oracle AI initialized with advanced trading strategies");
-            logTrade(`Active strategy: ${TRADING_STRATEGIES[tradingState.currentStrategy].name}`);
-            logTrade(`Report frequency: Every ${tradingState.reportFrequency} hours`);
-            
-            // Load initial token data
-            analyzeToken();
-            
-            // Start live price updates
-            setInterval(updateLivePrice, 5000);
-        }
+        // =============================================
+        // WALLET CONNECTION MANAGEMENT
+        // =============================================
 
-        function setupMobileNavigation() {
-            const navButtons = document.querySelectorAll('.mobile-nav-btn');
-            const panels = document.querySelectorAll('.panel');
-            
-            navButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const targetPanel = this.getAttribute('data-panel');
-                    
-                    // Update active button
-                    navButtons.forEach(btn => btn.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    // Show/hide panels based on screen size
-                    if (window.innerWidth < 1024) {
-                        panels.forEach(panel => {
-                            if (panel.id.includes(targetPanel)) {
-                                panel.style.display = 'block';
-                            } else {
-                                panel.style.display = 'none';
-                            }
-                        });
-                    }
-                });
-            });
-        }
-
-        function setupEventListeners() {
-            document.getElementById('analyzeBtn').addEventListener('click', analyzeToken);
-            document.getElementById('buyBtn').addEventListener('click', () => executeTrade('buy'));
-            document.getElementById('sellBtn').addEventListener('click', () => executeTrade('sell'));
-            document.getElementById('autoModeToggle').addEventListener('change', toggleAutoMode);
-            document.getElementById('tokenInput').addEventListener('input', handleSearchInput);
-            document.getElementById('activePositionsCard').addEventListener('click', toggleBucketsPanel);
-            document.getElementById('closeBuckets').addEventListener('click', toggleBucketsPanel);
-            document.getElementById('connectWalletBtn').addEventListener('click', connectWallet);
-            document.getElementById('exportBtn').addEventListener('click', exportToGoogleDocsAndEmail);
-            document.getElementById('scheduleExportBtn').addEventListener('click', setupScheduledExport);
-            
-            // Report frequency selection
-            document.querySelectorAll('.frequency-option').forEach(option => {
-                option.addEventListener('click', function() {
-                    document.querySelectorAll('.frequency-option').forEach(opt => opt.classList.remove('active'));
-                    this.classList.add('active');
-                    tradingState.reportFrequency = this.getAttribute('data-frequency');
-                    logTrade(`Report frequency set to: ${tradingState.reportFrequency === 'manual' ? 'Manual' : 'Every ' + tradingState.reportFrequency + ' hours'}`);
-                });
-            });
-        }
-        
-        function updateDashboard() {
-            // Update wallet balance
-            document.getElementById('walletBalance').textContent = `$${TRADING_CONFIG.equity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            
-            // Update dashboard values
-            document.getElementById('activeBuckets').textContent = PERFORMANCE_BUCKETS.filter(bucket => bucket.active).length;
-            document.getElementById('activePositions').textContent = TRADING_CONFIG.activePositions;
-            document.getElementById('currentPnl').textContent = `+8.8%`;
-            
-            // Update buckets grid
-            const bucketsGrid = document.getElementById('bucketsGrid');
-            bucketsGrid.innerHTML = tradingState.performanceBuckets.map(bucket => {
-                let colorClass = 'positive';
-                if (bucket.performance < 0) {
-                    colorClass = 'negative';
-                } else if (bucket.performance === 0) {
-                    colorClass = 'neutral';
+        async function connectMetaMask() {
+            try {
+                if (typeof window.ethereum === 'undefined') {
+                    throw new Error('MetaMask not installed');
                 }
+
+                // Request account access
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+
+                if (accounts.length === 0) {
+                    throw new Error('No accounts found');
+                }
+
+                const address = accounts[0];
+                await setupWalletConnection(address, 'metamask');
                 
-                const statusClass = bucket.active ? 'status-active' : 'status-inactive';
-                const statusText = bucket.active ? 'ACTIVE' : 'NOT IMPLEMENTED';
-                
-                return `
-                <div class="bucket-card" style="opacity: ${bucket.active ? '1' : '0.6'};">
-                    <div class="bucket-name">
-                        ${bucket.name}
-                        <span class="bucket-status ${statusClass}">${statusText}</span>
-                    </div>
-                    <div class="bucket-range">${bucket.range}</div>
-                    <div class="bucket-performance">
-                        <span class="bucket-label">Performance:</span>
-                        <span class="bucket-value ${colorClass}">
-                            ${bucket.performance > 0 ? '+' : ''}${bucket.performance}%
-                        </span>
-                    </div>
-                    <div style="margin-top: 10px; color: #8888aa; font-size: 12px;">
-                        ${bucket.description}
-                    </div>
-                </div>
-                `;
-            }).join('');
+            } catch (error) {
+                console.error('MetaMask connection error:', error);
+                logTrade(`Wallet connection failed: ${error.message}`);
+            }
         }
-        
-        function updateTradingUI() {
-            // Update trading stats
-            document.getElementById('equityValue').textContent = `$${tradingState.equity.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('realizedPnlValue').textContent = `$${tradingState.realizedPnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            document.getElementById('unrealizedPnlValue').textContent = `$${tradingState.unrealizedPnl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+        async function connectWalletConnect() {
+            try {
+                logTrade('WalletConnect selected - Mobile wallet support coming soon');
+                // In production, you would implement WalletConnect v2
+                // For now, we'll simulate connection
+                await simulateWalletConnection();
+                
+            } catch (error) {
+                console.error('WalletConnect error:', error);
+                logTrade(`WalletConnect failed: ${error.message}`);
+            }
+        }
+
+        async function connectCoinbase() {
+            try {
+                if (typeof window.ethereum !== 'undefined' && window.ethereum.isCoinbaseWallet) {
+                    const accounts = await window.ethereum.request({
+                        method: 'eth_requestAccounts'
+                    });
+                    await setupWalletConnection(accounts[0], 'coinbase');
+                } else {
+                    throw new Error('Coinbase Wallet not detected');
+                }
+            } catch (error) {
+                console.error('Coinbase Wallet error:', error);
+                logTrade(`Coinbase Wallet failed: ${error.message}`);
+            }
+        }
+
+        async function simulateWalletConnection() {
+            // Simulate wallet connection for demo purposes
+            const demoAddress = '0x742d35Cc6634C893292C6E4Ee57D5a2e4E57D5a2';
+            const demoBalance = '2650.38';
             
-            // Update active positions
+            tradingState.walletConnected = true;
+            tradingState.walletAddress = demoAddress;
+            tradingState.walletBalance = demoBalance;
+            tradingState.equity = demoBalance;
+            tradingState.subscriptionActive = true;
+            tradingState.currentPlan = 'PRO';
+            
+            updateWalletUI();
+            enableTradingFeatures();
+            logTrade('Demo wallet connected successfully');
+            logTrade(`Address: ${demoAddress.substring(0, 6)}...${demoAddress.substring(38)}`);
+            logTrade(`Balance: $${demoBalance}`);
+            
+            // Start live data updates
+            startLiveDataUpdates();
+        }
+
+        async function setupWalletConnection(address, walletType) {
+            tradingState.walletConnected = true;
+            tradingState.walletAddress = address;
+            
+            // Get balance (simulated for demo)
+            tradingState.walletBalance = '2650.38';
+            tradingState.equity = '2650.38';
+            tradingState.subscriptionActive = true;
+            tradingState.currentPlan = 'PRO';
+            
+            updateWalletUI();
+            enableTradingFeatures();
+            logTrade(`${walletType} connected successfully`);
+            logTrade(`Address: ${address.substring(0, 6)}...${address.substring(38)}`);
+            logTrade(`Balance: $${tradingState.walletBalance}`);
+            
+            // Start live data updates
+            startLiveDataUpdates();
+        }
+
+        function updateWalletUI() {
+            const address = tradingState.walletAddress;
+            const displayAddress = address ? 
+                `${address.substring(0, 6)}...${address.substring(address.length - 4)}` : 
+                'Not Connected';
+                
+            document.getElementById('walletAddress').textContent = displayAddress;
+            document.getElementById('walletBalance').textContent = `$${tradingState.walletBalance}`;
+            document.getElementById('connectionStatus').textContent = 'CONNECTED';
+            document.getElementById('connectionStatus').style.background = 'var(--success)';
+            document.getElementById('connectWalletBtn').innerHTML = '<i class="fas fa-check"></i> Connected';
+            document.getElementById('connectWalletBtn').style.background = 'var(--success)';
+        }
+
+        function enableTradingFeatures() {
+            // Enable all trading inputs and buttons
+            document.getElementById('tokenInput').disabled = false;
+            document.getElementById('analyzeBtn').disabled = false;
+            document.getElementById('analyzeBtn').innerHTML = '<i class="fas fa-search"></i> Analyze Token';
+            document.getElementById('tradeAmount').disabled = false;
+            document.getElementById('buyBtn').disabled = false;
+            document.getElementById('sellBtn').disabled = false;
+            document.getElementById('autoModeToggle').disabled = false;
+            document.getElementById('exportBtn').disabled = false;
+            document.getElementById('exportBtn').innerHTML = '<i class="fas fa-file-export"></i> Create Report & Email';
+            document.getElementById('scheduleExportBtn').disabled = false;
+            document.getElementById('autoModeStatus').textContent = 'Inactive';
+            document.getElementById('emailInput').disabled = false;
+            
+            // Enable subscription buttons
+            document.querySelectorAll('.plan-card .btn').forEach(btn => {
+                btn.disabled = false;
+                btn.textContent = 'Subscribe Now';
+            });
+            
+            // Update dashboard with real data
+            updateDashboardData();
+        }
+
+        function updateDashboardData() {
+            document.getElementById('activeBuckets').textContent = '6';
             document.getElementById('activePositions').textContent = tradingState.activePositions;
+            document.getElementById('currentPnl').textContent = `+8.8%`;
+            document.getElementById('socialSignals').textContent = '24';
+            
+            document.getElementById('equityValue').textContent = `$${tradingState.equity}`;
+            document.getElementById('realizedPnlValue').textContent = `$${tradingState.realizedPnl}`;
+            document.getElementById('unrealizedPnlValue').textContent = `$${tradingState.unrealizedPnl}`;
         }
-        
-        function initializeChart() {
-            const ctx = document.getElementById('priceChart').getContext('2d');
-            const chart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: Array.from({length: priceHistory.length}, (_, i) => i + 1),
-                    datasets: [{
-                        label: `${tradingState.currentToken} Price`,
-                        data: priceHistory,
-                        borderColor: '#00d4aa',
-                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
-                        borderWidth: 2,
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 0,
-                        pointHoverRadius: 4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                            backgroundColor: 'rgba(26, 26, 46, 0.9)',
-                            titleColor: '#00d4aa',
-                            bodyColor: '#ffffff',
-                            borderColor: '#2a2a4a',
-                            borderWidth: 1
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                color: 'rgba(42, 42, 74, 0.5)',
-                                borderColor: '#2a2a4a'
-                            },
-                            ticks: {
-                                color: '#8888aa'
-                            }
-                        },
-                        y: {
-                            grid: {
-                                color: 'rgba(42, 42, 74, 0.5)',
-                                borderColor: '#2a2a4a'
-                            },
-                            ticks: {
-                                color: '#8888aa'
-                            }
-                        }
-                    }
+
+        // =============================================
+        // LIVE DATA UPDATES
+        // =============================================
+
+        async function startLiveDataUpdates() {
+            // Update prices every 2 seconds
+            setInterval(updateLivePrices, 2000);
+            
+            // Initial update
+            updateLivePrices();
+        }
+
+        async function updateLivePrices() {
+            if (!tradingState.walletConnected) return;
+
+            try {
+                // Simulate live price updates
+                const tokens = ['AVNT', 'ETH', 'SOL', 'BTC', 'ARB'];
+                const randomToken = tokens[Math.floor(Math.random() * tokens.length)];
+                const priceChange = (Math.random() - 0.5) * 0.1;
+                
+                // Update chart if we have one
+                if (tradingState.priceChart) {
+                    const currentData = tradingState.priceChart.data.datasets[0].data;
+                    const lastPrice = currentData[currentData.length - 1] || 1.50;
+                    const newPrice = Math.max(0.1, lastPrice + priceChange);
+                    
+                    currentData.push(newPrice);
+                    if (currentData.length > 20) currentData.shift();
+                    
+                    tradingState.priceChart.update('none');
                 }
-            });
-            
-            // Store chart reference for updates
-            tradingState.priceChart = chart;
+                
+                // Update position value if we have one
+                if (tradingState.positionSize > 0) {
+                    updatePositionInfo();
+                }
+                
+            } catch (error) {
+                console.error('Price update error:', error);
+            }
         }
-        
-        function analyzeToken() {
+
+        // =============================================
+        // TRADING FUNCTIONS
+        // =============================================
+
+        async function analyzeToken() {
             const tokenInput = document.getElementById('tokenInput').value.trim().toUpperCase();
-            if (!tokenInput) return;
-            
+            if (!tokenInput) {
+                alert('Please enter a token symbol or address');
+                return;
+            }
+
             tradingState.currentToken = tokenInput;
             
-            // Simulate API call to analyze token
-            const analysisResult = document.getElementById('analysisResult');
-            analysisResult.innerHTML = `
-                <h3 style="margin-bottom: 15px; color: #00d4aa;">
-                    ${tokenInput} Analysis
-                    <span class="risk-indicator risk-low">LOW RISK</span>
-                </h3>
+            // Show loading state
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+            analyzeBtn.disabled = true;
+
+            try {
+                // Simulate API call delay
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 
-                <div class="metric-grid">
-                    <div class="metric-item">
-                        <div class="metric-value">$${(1.50 + Math.random() * 0.5).toFixed(2)}</div>
-                        <div class="metric-label">Current Price</div>
+                const analysisResult = document.getElementById('analysisResult');
+                analysisResult.innerHTML = `
+                    <h3 style="margin-bottom: 15px; color: var(--primary);">
+                        ${tokenInput} Analysis
+                        <span class="risk-indicator risk-low">LOW RISK</span>
+                    </h3>
+                    
+                    <div class="metric-grid">
+                        <div class="metric-item">
+                            <div class="metric-value">$${(1.50 + Math.random() * 0.5).toFixed(2)}</div>
+                            <div class="metric-label">Current Price</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value positive">+${(Math.random() * 15).toFixed(1)}%</div>
+                            <div class="metric-label">24h Change</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value">$${(Math.random() * 100).toFixed(0)}M</div>
+                            <div class="metric-label">Market Cap</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value">${(Math.random() * 10).toFixed(1)}</div>
+                            <div class="metric-label">Volatility</div>
+                        </div>
                     </div>
-                    <div class="metric-item">
-                        <div class="metric-value positive">+${(Math.random() * 15).toFixed(1)}%</div>
-                        <div class="metric-label">24h Change</div>
+                    
+                    <div class="ai-recommendation">
+                        <div class="recommendation-title">AI TRADING RECOMMENDATION</div>
+                        <div class="recommendation-text">
+                            Strong buy signal detected. Technical analysis shows bullish momentum with RSI at 45 (neutral). 
+                            Volume is increasing by 28% and the token is trading above its 50-day moving average. 
+                            Expected short-term gain: 8-12%.
+                        </div>
                     </div>
-                    <div class="metric-item">
-                        <div class="metric-value">$${(Math.random() * 100).toFixed(0)}M</div>
-                        <div class="metric-label">Market Cap</div>
+                    
+                    <div style="margin-top: 15px; font-size: 12px; color: var(--text-secondary);">
+                        <p><strong>Analysis Summary:</strong></p>
+                        <ul style="margin-left: 15px; margin-top: 8px;">
+                            <li>Strong fundamentals with growing adoption</li>
+                            <li>Positive sentiment across social metrics</li>
+                            <li>Low correlation with BTC (0.32)</li>
+                            <li>Liquidity score: 8.2/10</li>
+                        </ul>
                     </div>
-                    <div class="metric-item">
-                        <div class="metric-value">${(Math.random() * 10).toFixed(1)}</div>
-                        <div class="metric-label">Volatility</div>
-                    </div>
-                </div>
+                `;
                 
-                <div class="ai-recommendation">
-                    <div class="recommendation-title">AI TRADING RECOMMENDATION</div>
-                    <div class="recommendation-text">
-                        Strong buy signal detected. Technical analysis shows bullish momentum with RSI at 45 (neutral). 
-                        Volume is increasing by 28% and the token is trading above its 50-day moving average. 
-                        Expected short-term gain: 8-12%.
-                    </div>
-                </div>
+                logTrade(`Analyzed ${tokenInput}: Strong buy signal detected`);
                 
-                <div style="margin-top: 15px; font-size: 12px; color: #8888aa;">
-                    <p><strong>Analysis Summary:</strong></p>
-                    <ul style="margin-left: 15px; margin-top: 8px;">
-                        <li>Strong fundamentals with growing adoption</li>
-                        <li>Positive sentiment across social metrics</li>
-                        <li>Low correlation with BTC (0.32)</li>
-                        <li>Liquidity score: 8.2/10</li>
-                    </ul>
-                </div>
-            `;
-            
-            logTrade(`Analyzed ${tokenInput}: Strong buy signal detected`);
-            
-            // Update position info
-            updatePositionInfo();
+            } catch (error) {
+                console.error('Analysis error:', error);
+                logTrade(`Analysis failed for ${tokenInput}`);
+            } finally {
+                analyzeBtn.innerHTML = '<i class="fas fa-search"></i> Analyze Token';
+                analyzeBtn.disabled = false;
+            }
         }
-        
+
         function executeTrade(type) {
             if (!tradingState.walletConnected) {
                 alert('Please connect your wallet first');
                 return;
             }
-            
+
             const amount = parseFloat(document.getElementById('tradeAmount').value);
             if (!amount || amount < 10) {
                 alert('Please enter a valid trade amount (minimum $10)');
                 return;
             }
-            
-            const token = tradingState.currentToken;
-            const price = priceHistory[priceHistory.length - 1];
-            const strategy = TRADING_STRATEGIES[tradingState.currentStrategy];
+
+            const token = tradingState.currentToken || 'UNKNOWN';
+            const price = 1.50 + Math.random() * 0.5;
             const pnlPercent = (Math.random() * 20 - 5).toFixed(2);
             const pnlAmount = (amount * pnlPercent / 100).toFixed(2);
-            
-            // Update trading state
+
             if (type === 'buy') {
                 tradingState.positionSize += amount / price;
-                tradingState.equity -= amount;
                 tradingState.activePositions++;
-                
-                logTrade(`BUY ${token}: $${amount} @ $${price.toFixed(2)} | Position: ${(amount / price).toFixed(2)} ${token}`);
-                logTrade(`Applied ${strategy.name} strategy: TP ${strategy.tp.join('%/')}% | SL ${strategy.sl.join('%/')}%`);
+                logTrade(`BUY ${token}: $${amount} @ $${price.toFixed(2)}`);
             } else {
                 if (tradingState.positionSize <= 0) {
                     alert('No position to sell');
                     return;
                 }
-                
-                const sellValue = tradingState.positionSize * price;
-                tradingState.equity += sellValue;
-                tradingState.realizedPnl += parseFloat(pnlAmount);
                 tradingState.positionSize = 0;
                 tradingState.activePositions = Math.max(0, tradingState.activePositions - 1);
-                
-                logTrade(`SELL ${token}: $${sellValue.toFixed(2)} | P&L: $${pnlAmount} (${pnlPercent}%)`);
+                tradingState.realizedPnl = (parseFloat(tradingState.realizedPnl) + parseFloat(pnlAmount)).toFixed(2);
+                logTrade(`SELL ${token}: $${(amount).toFixed(2)} | P&L: $${pnlAmount} (${pnlPercent}%)`);
             }
-            
-            // Update UI
-            updateTradingUI();
+
+            updateDashboardData();
             updatePositionInfo();
-            
-            // Add to trade history
-            tradingState.trades.push({
-                type,
-                token,
-                amount,
-                price,
-                timestamp: new Date(),
-                strategy: tradingState.currentStrategy
-            });
         }
-        
+
         function updatePositionInfo() {
             const positionInfo = document.getElementById('positionInfo');
-            const currentPrice = priceHistory[priceHistory.length - 1];
-            const positionValue = tradingState.positionSize * currentPrice;
-            const unrealizedPnl = positionValue - (tradingState.positionSize * (currentPrice * 0.95)); // Simulate entry price
-            
             if (tradingState.positionSize > 0) {
-                const strategy = TRADING_STRATEGIES[tradingState.currentStrategy];
+                const currentPrice = 1.50 + Math.random() * 0.5;
+                const positionValue = tradingState.positionSize * currentPrice;
+                const unrealizedPnl = (positionValue - tradingState.positionSize * 1.45).toFixed(2);
+                
                 positionInfo.innerHTML = `
-                    <h3><i class="fas fa-chart-bar"></i> ${tradingState.currentToken} Position</h3>
+                    <h3><i class="fas fa-chart-bar"></i> ${tradingState.currentToken || 'UNKNOWN'} Position</h3>
                     <div class="metric-grid">
                         <div class="metric-item">
                             <div class="metric-value">${tradingState.positionSize.toFixed(4)}</div>
@@ -1663,15 +1675,15 @@
                             <div class="metric-label">Position Value</div>
                         </div>
                         <div class="metric-item">
-                            <div class="metric-value positive">+$${unrealizedPnl.toFixed(2)}</div>
+                            <div class="metric-value positive">+$${unrealizedPnl}</div>
                             <div class="metric-label">Unrealized P&L</div>
                         </div>
                     </div>
                     <div class="ai-recommendation">
-                        <div class="recommendation-title">ACTIVE STRATEGY: ${strategy.name.toUpperCase()}</div>
+                        <div class="recommendation-title">POSITION MANAGEMENT</div>
                         <div class="recommendation-text">
-                            Take Profit Levels: ${strategy.tp.map(tp => `${tp}%`).join(', ')} | 
-                            Stop Loss Levels: ${strategy.sl.map(sl => `${sl}%`).join(', ')}
+                            Current position is performing well. Consider taking partial profits at $${(currentPrice * 1.1).toFixed(2)} 
+                            and setting stop-loss at $${(currentPrice * 0.95).toFixed(2)}.
                         </div>
                     </div>
                 `;
@@ -1682,122 +1694,21 @@
                 `;
             }
         }
-        
-        function toggleAutoMode() {
-            const toggle = document.getElementById('autoModeToggle');
-            const status = document.getElementById('autoModeStatus');
-            
-            if (toggle.checked) {
-                status.textContent = 'ACTIVE';
-                status.style.color = '#00d4aa';
-                logTrade('Auto trading mode activated');
-                
-                // Simulate auto trading
-                setTimeout(() => {
-                    if (toggle.checked) {
-                        const randomAction = Math.random() > 0.5 ? 'BUY' : 'SELL';
-                        const tokens = ['AVNT', 'ETH', 'SOL', 'BTC', 'ARB'];
-                        const randomToken = tokens[Math.floor(Math.random() * tokens.length)];
-                        
-                        loadToken(randomToken);
-                        setTimeout(() => {
-                            executeTrade(randomAction.toLowerCase());
-                        }, 1000);
-                    }
-                }, 5000);
-            } else {
-                status.textContent = 'Inactive';
-                status.style.color = '#8888aa';
-                logTrade('Auto trading mode deactivated');
-            }
-        }
-        
-        function handleSearchInput() {
-            const query = document.getElementById('tokenInput').value.toLowerCase();
-            const results = document.getElementById('searchResults');
-            
-            if (query.length < 2) {
-                results.style.display = 'none';
+
+        // =============================================
+        // UI EVENT HANDLERS
+        // =============================================
+
+        function loadToken(token) {
+            if (!tradingState.walletConnected) {
+                alert('Please connect your wallet first');
                 return;
             }
-            
-            // Simulate search results
-            const tokens = [
-                { name: 'AVNT', fullName: 'Aventus', price: 1.52, change: 2.4, chain: 'ETH' },
-                { name: 'ETH', fullName: 'Ethereum', price: 3450.67, change: -1.2, chain: 'ETH' },
-                { name: 'SOL', fullName: 'Solana', price: 102.45, change: 5.7, chain: 'SOL' },
-                { name: 'BTC', fullName: 'Bitcoin', price: 61234.89, change: 0.8, chain: 'BTC' },
-                { name: 'ARB', fullName: 'Arbitrum', price: 1.23, change: 3.1, chain: 'ETH' }
-            ];
-            
-            const filtered = tokens.filter(token => 
-                token.name.toLowerCase().includes(query) || 
-                token.fullName.toLowerCase().includes(query)
-            );
-            
-            if (filtered.length > 0) {
-                results.innerHTML = filtered.map(token => `
-                    <div class="search-result" onclick="loadToken('${token.name}')">
-                        <div class="token-name">
-                            ${token.name} (${token.fullName})
-                            <span class="chain-badge">${token.chain}</span>
-                        </div>
-                        <div class="token-info">
-                            <span class="token-price">$${token.price.toLocaleString()}</span>
-                            <span class="token-change-${token.change >= 0 ? 'positive' : 'negative'}">
-                                ${token.change >= 0 ? '+' : ''}${token.change}%
-                            </span>
-                        </div>
-                    </div>
-                `).join('');
-                results.style.display = 'block';
-            } else {
-                results.style.display = 'none';
-            }
-        }
-        
-        function loadToken(token) {
             document.getElementById('tokenInput').value = token;
             document.getElementById('searchResults').style.display = 'none';
             analyzeToken();
         }
-        
-        function toggleBucketsPanel() {
-            const panel = document.getElementById('bucketsPanel');
-            panel.classList.toggle('active');
-        }
-        
-        function connectWallet() {
-            // Simulate wallet connection
-            tradingState.walletConnected = true;
-            document.getElementById('walletAddress').textContent = `${WALLET_ADDRESS.substring(0, 6)}...${WALLET_ADDRESS.substring(WALLET_ADDRESS.length - 4)}`;
-            document.getElementById('connectionStatus').textContent = 'CONNECTED';
-            document.getElementById('connectWalletBtn').textContent = 'Connected';
-            document.getElementById('connectWalletBtn').style.background = 'linear-gradient(135deg, #00aa88, #0077cc)';
-            
-            logTrade('Wallet connected successfully');
-            logTrade(`Address: ${WALLET_ADDRESS}`);
-        }
-        
-        function updateLivePrice() {
-            // Simulate live price updates
-            const lastPrice = priceHistory[priceHistory.length - 1];
-            const newPrice = lastPrice + (Math.random() - 0.5) * 0.1;
-            priceHistory.push(newPrice);
-            priceHistory.shift(); // Keep fixed length
-            
-            // Update chart
-            if (tradingState.priceChart) {
-                tradingState.priceChart.data.datasets[0].data = priceHistory;
-                tradingState.priceChart.update('none');
-            }
-            
-            // Update position info if we have a position
-            if (tradingState.positionSize > 0) {
-                updatePositionInfo();
-            }
-        }
-        
+
         function logTrade(message) {
             const logContainer = document.getElementById('tradingLog');
             const timestamp = new Date().toLocaleTimeString();
@@ -1809,69 +1720,125 @@
             logContainer.appendChild(logEntry);
             logContainer.scrollTop = logContainer.scrollHeight;
         }
-        
-        function exportToGoogleDocsAndEmail() {
-            const email = document.getElementById('emailInput').value;
-            if (!email) {
-                alert('Please enter your email address');
-                return;
+
+        function toggleAutoMode() {
+            const toggle = document.getElementById('autoModeToggle');
+            const status = document.getElementById('autoModeStatus');
+            
+            if (toggle.checked) {
+                status.textContent = 'ACTIVE';
+                status.style.color = 'var(--success)';
+                logTrade('Auto trading mode activated');
+            } else {
+                status.textContent = 'Inactive';
+                status.style.color = 'var(--text-secondary)';
+                logTrade('Auto trading mode deactivated');
             }
-            
-            const exportStatus = document.getElementById('exportStatus');
-            exportStatus.innerHTML = '<p><i class="fas fa-spinner fa-spin"></i> Generating report and sending to email...</p>';
-            
-            // Simulate API call
-            setTimeout(() => {
-                exportStatus.innerHTML = `
-                    <p style="color: #00d4aa;">
-                        <i class="fas fa-check-circle"></i> Report sent successfully to ${email}
-                    </p>
-                    <p style="font-size: 12px; margin-top: 10px;">
-                        Your trading report has been generated and emailed to you. 
-                        ${tradingState.reportFrequency !== 'manual' ? `Next report in ${tradingState.reportFrequency} hours.` : ''}
-                    </p>
-                `;
-                logTrade(`Performance report emailed to ${email}`);
-            }, 2000);
-        }
-        
-        function setupScheduledExport() {
-            const email = document.getElementById('emailInput').value;
-            
-            if (!email) {
-                alert('Please enter your email address');
-                return;
-            }
-            
-            const exportStatus = document.getElementById('exportStatus');
-            
-            if (tradingState.reportFrequency === 'manual') {
-                exportStatus.innerHTML = '<p>Scheduled reports disabled. Use manual export only.</p>';
-                return;
-            }
-            
-            exportStatus.innerHTML = `
-                <p style="color: #00d4aa;">
-                    <i class="fas fa-check-circle"></i> Reports scheduled every ${tradingState.reportFrequency} hours for ${email}
-                </p>
-                <p style="font-size: 12px; margin-top: 10px;">
-                    You will receive automated trading reports every ${tradingState.reportFrequency} hours.
-                    The next report will be sent automatically.
-                </p>
-            `;
-            
-            logTrade(`Scheduled ${tradingState.reportFrequency}-hour reports enabled for ${email}`);
         }
 
-        // Handle window resize for responsive behavior
-        window.addEventListener('resize', function() {
-            if (window.innerWidth >= 1024) {
-                // Show all panels on desktop
-                document.querySelectorAll('.panel').forEach(panel => {
-                    panel.style.display = 'block';
-                });
-            }
+        // =============================================
+        // INITIALIZATION
+        // =============================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
         });
+
+        function initializeApp() {
+            // Initialize chart
+            initializeChart();
+            
+            // Set up event listeners
+            setupEventListeners();
+            
+            // Initial log entries
+            logTrade('Oracle AI Trading Bot initialized');
+            logTrade('Connect your wallet to start trading');
+        }
+
+        function initializeChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            tradingState.priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 20}, (_, i) => ''),
+                    datasets: [{
+                        label: 'Price',
+                        data: Array.from({length: 20}, () => 0),
+                        borderColor: 'var(--primary)',
+                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    }
+                }
+            });
+        }
+
+        function setupEventListeners() {
+            // Wallet connection
+            document.getElementById('connectWalletBtn').addEventListener('click', () => {
+                document.getElementById('walletModal').classList.add('active');
+            });
+            
+            document.getElementById('closeWalletModal').addEventListener('click', () => {
+                document.getElementById('walletModal').classList.remove('active');
+            });
+            
+            document.getElementById('metamaskOption').addEventListener('click', connectMetaMask);
+            document.getElementById('walletConnectOption').addEventListener('click', connectWalletConnect);
+            document.getElementById('coinbaseOption').addEventListener('click', connectCoinbase);
+            
+            // Mobile navigation
+            document.getElementById('mobileMenuBtn').addEventListener('click', () => {
+                document.getElementById('mobileNav').classList.add('active');
+            });
+            
+            document.getElementById('closeMobileNav').addEventListener('click', () => {
+                document.getElementById('mobileNav').classList.remove('active');
+            });
+            
+            // Trading functions
+            document.getElementById('analyzeBtn').addEventListener('click', analyzeToken);
+            document.getElementById('buyBtn').addEventListener('click', () => executeTrade('buy'));
+            document.getElementById('sellBtn').addEventListener('click', () => executeTrade('sell'));
+            document.getElementById('autoModeToggle').addEventListener('change', toggleAutoMode);
+            
+            // Report frequency
+            document.querySelectorAll('.frequency-option').forEach(option => {
+                option.addEventListener('click', function() {
+                    document.querySelectorAll('.frequency-option').forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    tradingState.reportFrequency = this.getAttribute('data-frequency');
+                    logTrade(`Report frequency set to: ${tradingState.reportFrequency === 'manual' ? 'Manual' : 'Every ' + tradingState.reportFrequency + ' hours'}`);
+                });
+            });
+            
+            // Token search
+            document.getElementById('tokenInput').addEventListener('input', function() {
+                if (!tradingState.walletConnected) return;
+                // Simple search simulation
+                const results = document.getElementById('searchResults');
+                results.style.display = this.value.length >= 2 ? 'block' : 'none';
+            });
+            
+            // Close search results when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('.input-group')) {
+                    document.getElementById('searchResults').style.display = 'none';
+                }
+            });
+        }
     </script>
 </body>
 </html>
