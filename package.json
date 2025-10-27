@@ -1,0 +1,24 @@
+{
+  "name": "oracle-ai-trading-bot",
+  "version": "1.0.0",
+  "description": "Advanced AI-powered trading bot with social sentiment analysis",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "trading",
+    "crypto",
+    "ai",
+    "web3",
+    "defi",
+    "automation"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^4.4.5"
+  }
+}
