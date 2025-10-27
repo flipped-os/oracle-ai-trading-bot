@@ -34,9 +34,8 @@ Advanced AI-powered trading bot with social sentiment analysis, automated strate
 
 ## 🚀 Quick Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/oracle-ai-trading-bot)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/flipped-os/oracle-ai-trading-bot)
 
-Replace YOUR_USERNAME with your actual GitHub username.
 
 ## 📱 Usage
 
