@@ -1376,8 +1376,10 @@
             
             // Live Data State
             liveDataInterval: null,
-            baseEquity: 0,
-            basePnl: 0,
+            baseEquity: 2605.00, // Starting balance
+            totalProfit: 0.00,
+            positionHistory: [],
+            lastPositionClose: Date.now(),
             
             // Subscription State
             currentPlan: null,
@@ -1417,6 +1419,9 @@
                 // Update P&L with realistic fluctuations
                 updatePnlValues();
                 
+                // Simulate realistic position activity
+                simulatePositionActivity();
+                
                 // Update chart with live data
                 updateLiveChart();
                 
@@ -1431,32 +1436,64 @@
         }
 
         function updatePnlValues() {
-            // Generate realistic P&L fluctuations
-            const pnlChange = (Math.random() - 0.5) * 0.8; // -0.4 to +0.4%
-            const currentPnlPercent = parseFloat(tradingState.currentPnl) || 0;
-            const newPnlPercent = Math.max(-10, Math.min(15, currentPnlPercent + pnlChange));
+            // Very slow profit accumulation - about $4 in 5 minutes
+            const timeElapsed = Date.now() - tradingState.lastPositionClose;
+            const minutesElapsed = timeElapsed / (1000 * 60);
             
-            // Update P&L display
+            // Calculate very small profit (approximately $4 in 5 minutes)
+            const profitPerMinute = 4 / 5; // $0.80 per minute
+            const newProfit = Math.min(4, minutesElapsed * profitPerMinute * (0.8 + Math.random() * 0.4));
+            
+            tradingState.totalProfit = newProfit;
+            
+            // Update equity with realized profits
+            const newEquity = tradingState.baseEquity + tradingState.totalProfit;
+            tradingState.equity = newEquity.toFixed(2);
+            
+            // Update P&L display with small fluctuations
+            const pnlPercent = (tradingState.totalProfit / tradingState.baseEquity * 100);
             const pnlElement = document.getElementById('currentPnl');
-            const pnlClass = newPnlPercent >= 0 ? 'positive' : 'negative';
-            const pnlSign = newPnlPercent >= 0 ? '+' : '';
-            pnlElement.textContent = `${pnlSign}${newPnlPercent.toFixed(2)}%`;
+            const pnlClass = pnlPercent >= 0 ? 'positive' : 'negative';
+            const pnlSign = pnlPercent >= 0 ? '+' : '';
+            pnlElement.textContent = `${pnlSign}${pnlPercent.toFixed(2)}%`;
             pnlElement.className = `dashboard-value ${pnlClass}`;
             
-            // Update realized P&L with small random changes
-            const realizedChange = (Math.random() - 0.3) * 2; // Small changes
-            const currentRealized = parseFloat(tradingState.realizedPnl) || 0;
-            const newRealized = Math.max(0, currentRealized + realizedChange);
-            tradingState.realizedPnl = newRealized.toFixed(2);
+            // Update realized P&L (very slow accumulation)
+            tradingState.realizedPnl = tradingState.totalProfit.toFixed(2);
             
-            // Update unrealized P&L with more volatility
-            const unrealizedChange = (Math.random() - 0.5) * 5; // More volatile
+            // Update unrealized P&L with small fluctuations
+            const unrealizedChange = (Math.random() - 0.5) * 0.2; // Very small changes
             const currentUnrealized = parseFloat(tradingState.unrealizedPnl) || 0;
-            const newUnrealized = currentUnrealized + unrealizedChange;
+            const newUnrealized = Math.max(-2, Math.min(2, currentUnrealized + unrealizedChange));
             tradingState.unrealizedPnl = newUnrealized.toFixed(2);
             
             // Update dashboard
             updateDashboardData();
+        }
+
+        function simulatePositionActivity() {
+            const now = Date.now();
+            const timeSinceLastClose = now - tradingState.lastPositionClose;
+            
+            // Simulate position opening/closing every 30-60 seconds
+            if (timeSinceLastClose > 30000 + Math.random() * 30000) { // 30-60 seconds
+                if (tradingState.activePositions === 0) {
+                    // Open a new position
+                    tradingState.activePositions = 1;
+                    tradingState.positionSize = 50 + Math.random() * 100; // $50-150 position
+                    logTrade(`Auto-opened position: $${tradingState.positionSize.toFixed(2)} in ETH`);
+                    tradingState.lastPositionClose = now;
+                } else {
+                    // Close the position
+                    tradingState.activePositions = 0;
+                    tradingState.positionSize = 0;
+                    const profit = (Math.random() - 0.3) * 8; // Small profit/loss
+                    logTrade(`Auto-closed position: ${profit >= 0 ? '+' : ''}$${profit.toFixed(2)} P&L`);
+                    tradingState.lastPositionClose = now;
+                }
+                
+                updateDashboardData();
+            }
         }
 
         function updateLiveChart() {
@@ -1466,7 +1503,7 @@
             const lastPrice = currentData[currentData.length - 1] || 1.50;
             
             // Generate realistic price movement
-            const volatility = 0.02; // 2% volatility
+            const volatility = 0.008; // Very low volatility for realistic look
             const changePercent = (Math.random() - 0.5) * volatility;
             const newPrice = Math.max(0.1, lastPrice * (1 + changePercent));
             
@@ -1540,22 +1577,21 @@
         async function simulateWalletConnection() {
             // Simulate wallet connection for demo purposes
             const demoAddress = '0x742d35Cc6634C893292C6E4Ee57D5a2e4E57D5a2';
-            const demoBalance = (Math.random() * 5000 + 1000).toFixed(2); // Random balance between 1000-6000
             
             tradingState.walletConnected = true;
             tradingState.walletAddress = demoAddress;
-            tradingState.walletBalance = demoBalance;
-            tradingState.equity = demoBalance;
-            tradingState.baseEquity = parseFloat(demoBalance);
+            tradingState.walletBalance = tradingState.baseEquity.toFixed(2);
+            tradingState.equity = tradingState.baseEquity.toFixed(2);
             tradingState.currentPnl = '0.00';
             tradingState.subscriptionActive = true;
             tradingState.currentPlan = 'PRO';
+            tradingState.lastPositionClose = Date.now();
             
             updateWalletUI();
             enableTradingFeatures();
             logTrade('Demo wallet connected successfully');
             logTrade(`Address: ${demoAddress.substring(0, 6)}...${demoAddress.substring(38)}`);
-            logTrade(`Balance: $${demoBalance}`);
+            logTrade(`Balance: $${tradingState.walletBalance}`);
             
             // Start live data updates
             startLiveDataUpdates();
@@ -1565,14 +1601,12 @@
             tradingState.walletConnected = true;
             tradingState.walletAddress = address;
             
-            // Get random balance for demo
-            const randomBalance = (Math.random() * 5000 + 1000).toFixed(2);
-            tradingState.walletBalance = randomBalance;
-            tradingState.equity = randomBalance;
-            tradingState.baseEquity = parseFloat(randomBalance);
+            tradingState.walletBalance = tradingState.baseEquity.toFixed(2);
+            tradingState.equity = tradingState.baseEquity.toFixed(2);
             tradingState.currentPnl = '0.00';
             tradingState.subscriptionActive = true;
             tradingState.currentPlan = 'PRO';
+            tradingState.lastPositionClose = Date.now();
             
             updateWalletUI();
             enableTradingFeatures();
@@ -1591,7 +1625,7 @@
                 'Not Connected';
                 
             document.getElementById('walletAddress').textContent = displayAddress;
-            document.getElementById('walletBalance').textContent = `$${tradingState.walletBalance}`;
+            document.getElementById('walletBalance').textContent = `$${tradingState.equity}`;
             document.getElementById('connectionStatus').textContent = 'CONNECTED';
             document.getElementById('connectionStatus').style.background = 'var(--success)';
             document.getElementById('connectWalletBtn').innerHTML = '<i class="fas fa-check"></i> Connected';
@@ -1626,7 +1660,7 @@
         function updateDashboardData() {
             document.getElementById('activeBuckets').textContent = '6';
             document.getElementById('activePositions').textContent = tradingState.activePositions;
-            document.getElementById('socialSignals').textContent = Math.floor(Math.random() * 50) + 10; // Random signals
+            document.getElementById('socialSignals').textContent = Math.floor(Math.random() * 20) + 15; // 15-35 signals
             
             document.getElementById('equityValue').textContent = `$${tradingState.equity}`;
             document.getElementById('realizedPnlValue').textContent = `$${tradingState.realizedPnl}`;
@@ -1657,9 +1691,9 @@
                 
                 const analysisResult = document.getElementById('analysisResult');
                 const currentPrice = (1.50 + Math.random() * 0.5).toFixed(2);
-                const priceChange = (Math.random() * 20 - 5).toFixed(1);
+                const priceChange = (Math.random() * 10 - 2).toFixed(1); // More realistic changes
                 const marketCap = (Math.random() * 200 + 50).toFixed(0);
-                const volatility = (Math.random() * 8 + 2).toFixed(1);
+                const volatility = (Math.random() * 5 + 1).toFixed(1); // Lower volatility
                 
                 analysisResult.innerHTML = `
                     <h3 style="margin-bottom: 15px; color: var(--primary);">
@@ -1689,24 +1723,24 @@
                     <div class="ai-recommendation">
                         <div class="recommendation-title">AI TRADING RECOMMENDATION</div>
                         <div class="recommendation-text">
-                            ${priceChange > 5 ? 'Strong buy' : priceChange > 0 ? 'Moderate buy' : 'Neutral'} signal detected. 
-                            Technical analysis shows ${Math.random() > 0.5 ? 'bullish' : 'neutral'} momentum. 
-                            Expected short-term gain: ${(Math.random() * 15 + 5).toFixed(1)}%.
+                            ${priceChange > 3 ? 'Moderate buy' : priceChange > 0 ? 'Neutral' : 'Caution'} signal detected. 
+                            Technical analysis shows stable momentum. 
+                            Expected short-term gain: ${(Math.random() * 8 + 2).toFixed(1)}%.
                         </div>
                     </div>
                     
                     <div style="margin-top: 15px; font-size: 12px; color: var(--text-secondary);">
                         <p><strong>Analysis Summary:</strong></p>
                         <ul style="margin-left: 15px; margin-top: 8px;">
-                            <li>${Math.random() > 0.5 ? 'Strong' : 'Moderate'} fundamentals with growing adoption</li>
-                            <li>${Math.random() > 0.5 ? 'Positive' : 'Neutral'} sentiment across social metrics</li>
-                            <li>Low correlation with BTC (${(Math.random() * 0.5 + 0.2).toFixed(2)})</li>
-                            <li>Liquidity score: ${(Math.random() * 3 + 7).toFixed(1)}/10</li>
+                            <li>${Math.random() > 0.5 ? 'Stable' : 'Moderate'} fundamentals</li>
+                            <li>${Math.random() > 0.5 ? 'Positive' : 'Neutral'} market sentiment</li>
+                            <li>Average correlation with BTC (${(Math.random() * 0.4 + 0.3).toFixed(2)})</li>
+                            <li>Liquidity score: ${(Math.random() * 2 + 6).toFixed(1)}/10</li>
                         </ul>
                     </div>
                 `;
                 
-                logTrade(`Analyzed ${tokenInput}: ${priceChange > 0 ? 'Positive' : 'Neutral'} signal detected`);
+                logTrade(`Analyzed ${tokenInput}: ${priceChange > 0 ? 'Neutral' : 'Caution'} signal detected`);
                 
             } catch (error) {
                 console.error('Analysis error:', error);
@@ -1731,7 +1765,7 @@
 
             const token = tradingState.currentToken || 'UNKNOWN';
             const price = 1.50 + Math.random() * 0.5;
-            const pnlPercent = (Math.random() * 20 - 5).toFixed(2);
+            const pnlPercent = (Math.random() * 10 - 2).toFixed(2); // Smaller P&L range
             const pnlAmount = (amount * pnlPercent / 100).toFixed(2);
 
             if (type === 'buy') {
@@ -1783,9 +1817,8 @@
                     <div class="ai-recommendation">
                         <div class="recommendation-title">POSITION MANAGEMENT</div>
                         <div class="recommendation-text">
-                            Current position is ${parseFloat(unrealizedPnl) >= 0 ? 'performing well' : 'under pressure'}. 
-                            Consider ${parseFloat(unrealizedPnl) >= 0 ? 'taking partial profits' : 'setting stop-loss'} 
-                            at $${(currentPrice * (parseFloat(unrealizedPnl) >= 0 ? 1.1 : 0.95)).toFixed(2)}.
+                            Current position is ${parseFloat(unrealizedPnl) >= 0 ? 'performing well' : 'under slight pressure'}. 
+                            Consider ${parseFloat(unrealizedPnl) >= 0 ? 'holding for target' : 'monitoring closely'}.
                         </div>
                     </div>
                 `;
